@@ -79,11 +79,9 @@ def predict():
 def layers():
 	jmodel = json.loads(model.to_json())
 	config = jmodel["config"]
-
-	data = {}
-
-	for layer in config["layers"]:
-		data.append(layer["name"])
+	
+	cof = config['layers']
+	data = [layer['class_name'] for layer in config["layers"]]
 
 	return flask.jsonify(data)
 
