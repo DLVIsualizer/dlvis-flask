@@ -10,5 +10,6 @@ import dlv
 if __name__ == "__main__":
 	resnet50Model = ResNet50(weights="imagenet")
 	dlvModel = dlv.Model(resnet50Model)
+	
 	layerNames = dlvModel.getLayerNames()
 	print()

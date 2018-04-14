@@ -81,7 +81,7 @@ def layers():
 	config = jmodel["config"]
 	
 	cof = config['layers']
-	data = [layer['name'] for layer in config["layers"]]
+	data = [layer['class_name'] for layer in config["layers"]]
 
 	return flask.jsonify(data)
 

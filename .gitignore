@@ -1,3 +1,8 @@
+
+# custom ignore folder
+z_ignore/
+
+
 .vscode
 *.sw*
 

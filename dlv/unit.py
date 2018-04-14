@@ -1,5 +1,6 @@
 class Unit:
     def __init__(self, isFilter, unit):
-        self.isFilter = isFilter
-        self.unit = unit
-        self.selectivity = 0.0
+        self._isFilter = isFilter
+        self._unit = unit
+        self._activation = []
+        self._selectivity = 0.0
