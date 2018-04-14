@@ -18,6 +18,7 @@ import json
 
 # initialize our Flask application and the Keras model
 app = flask.Flask(__name__)
+model = ResNet50(weights="imagenet")
 
 def load_model():
 	# load the pre-trained Keras model (here we are using a model
@@ -42,7 +43,6 @@ def prepare_image(image, target):
 
 @app.route("/predict", methods=["POST"])
 def predict():
-	model = ResNet50(weights="imagenet")
 	# initialize the data dictionary that will be returned from the
 	# view
 	data = {"success": False}
@@ -77,12 +77,10 @@ def predict():
 
 @app.route("/layers", methods=["GET"])
 def layers():
-	model = ResNet50(weights="imagenet")
 	jmodel = json.loads(model.to_json())
-	config = jmodel["config"]
-	
-	cof = config['layers']
-	data = [layer['class_name'] for layer in config["layers"]]
+	layers = jmodel["config"]["layers"]
+
+	data = [layer['class_name'] for layer in layers]
 
 	return flask.jsonify(data)
 
