@@ -78,9 +78,11 @@ def predict():
 @app.route("/layers", methods=["GET"])
 def layers():
 	model = ResNet50(weights="imagenet")
-	layers = model["config"]["layers"]
-
-	data = [layer["class_name"] for layer in layers]
+	jmodel = json.loads(model.to_json())
+	config = jmodel["config"]
+	
+	cof = config['layers']
+	data = [layer['class_name'] for layer in config["layers"]]
 
 	return flask.jsonify(data)
 
