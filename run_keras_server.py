@@ -80,7 +80,7 @@ def layers():
 	jmodel = json.loads(model.to_json())
 	layers = jmodel["config"]["layers"]
 
-	data = [layer['class_name'] for layer in layers]
+	data = [layer['name'] for layer in layers]
 
 	return flask.jsonify(data)
 
