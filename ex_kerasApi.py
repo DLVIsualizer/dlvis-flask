@@ -6,7 +6,8 @@ import dlv
 if __name__ == "__main__":
 	resnet50Model = ResNet50(weights="imagenet")
 	dlvModel = dlv.Model(resnet50Model)
-	conv1_features = dlvModel.getFeaturesFromLayer('conv1')
+	dlvModel.addInputData('dog.jpg')
+	dlvModel.addInputData('cat.jpg')
+	result = dlvModel.getFeaturesFromFetchedList()
 	
-	layerNames = dlvModel.getLayerNames()
 	print()
