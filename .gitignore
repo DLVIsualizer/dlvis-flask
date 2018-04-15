@@ -1,6 +1,9 @@
 # custom ignore folder
 z_ignore/
 
+# pycache
+__pycache__
+
 .vscode
 *.sw*
 
