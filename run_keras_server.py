@@ -75,8 +75,8 @@ def predict():
 	# return the data dictionary as a JSON response
 	return flask.jsonify(data)
 
-@app.route("/layers", methods=["GET"])
-def layers():
+@app.route("/layers/<int:model_id>", methods=["GET"])
+def layers(model_id):
 	jmodel = json.loads(model.to_json())
 	layers = jmodel["config"]["layers"]
 
