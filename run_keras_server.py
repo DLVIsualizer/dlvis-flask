@@ -53,7 +53,7 @@ def create_graph_json(layers):
 		})
 
 	edges = []
-	for idx in range(1, len(layers)-1):
+	for idx in range(1, len(layers)):
 		edges.append({
 			"id": "e" + str(idx),
 			"source": "n" + str(idx-1),
