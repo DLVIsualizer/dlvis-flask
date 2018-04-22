@@ -43,6 +43,29 @@ def prepare_image(image, target):
 	# return the processed image
 	return image
 
+def create_graph_json(layers):
+	graph_json = {}
+	nodes = []
+	for idx, layer in enumerate(layers):
+		nodes.append({
+			"id": "n" + str(idx),
+			"label": layer
+		})
+
+	edges = []
+	for idx in range(1, len(layers)-1):
+		edges.append({
+			"id": "e" + str(idx),
+			"source": "n" + str(idx-1),
+			"target": "n" + str(idx),
+			"label": "l" + str(idx)
+		})
+
+	graph_json['nodes'] = nodes
+	graph_json['edges'] = edges
+
+	return graph_json
+
 @app.route("/predict", methods=["POST"])
 def predict():
 	# initialize the data dictionary that will be returned from the
@@ -85,7 +108,7 @@ def layers(model_id):
 
 	data = [layer['name'] for layer in layers]
 
-	return flask.jsonify(data)
+	return flask.jsonify(create_graph_json(data))
 
 # if this is the main thread of execution first load the model and
 # then start the server

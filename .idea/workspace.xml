@@ -2,21 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="1a36b439-ce52-420e-8f13-462392dc5605" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dlvis/.gitignore" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dlvis/README.md" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dlvis/package-lock.json" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dlvis/package.json" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dlvis/public/favicon.ico" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dlvis/public/index.html" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dlvis/public/manifest.json" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dlvis/src/App.css" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dlvis/src/App.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dlvis/src/App.test.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dlvis/src/index.css" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dlvis/src/index.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dlvis/src/logo.svg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dlvis/src/registerServiceWorker.js" afterPath="" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/requirements.txt" afterPath="$PROJECT_DIR$/requirements.txt" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/run_keras_server.py" afterPath="$PROJECT_DIR$/run_keras_server.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -31,20 +18,10 @@
       <file leaf-file-name="run_keras_server.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/run_keras_server.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="213">
-              <caret line="62" column="44" lean-forward="false" selection-start-line="62" selection-start-column="44" selection-end-line="62" selection-end-column="44" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="run_keras_server_redis.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/run_keras_server_redis.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="15">
-              <caret line="165" column="5" lean-forward="false" selection-start-line="165" selection-start-column="5" selection-end-line="165" selection-end-column="5" />
+            <state relative-caret-position="471">
+              <caret line="107" column="0" lean-forward="true" selection-start-line="107" selection-start-column="0" selection-end-line="107" selection-end-column="0" />
               <folding>
-                <element signature="e#248#287#0" expanded="true" />
+                <element signature="e#245#286#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -75,9 +52,9 @@
       <list>
         <option value="$PROJECT_DIR$/simple_request.py" />
         <option value="$PROJECT_DIR$/run_keras_server_redis.py" />
-        <option value="$PROJECT_DIR$/run_keras_server.py" />
         <option value="$PROJECT_DIR$/../dlvis-react/src/index.js" />
         <option value="$PROJECT_DIR$/../dlvis-react/src/containers/BoardContainer.js" />
+        <option value="$PROJECT_DIR$/run_keras_server.py" />
       </list>
     </option>
   </component>
@@ -91,6 +68,7 @@
     <option name="width" value="1440" />
     <option name="height" value="900" />
   </component>
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
     <navigator currentView="ProjectPane" proportions="" version="1">
       <flattenPackages />
@@ -138,8 +116,24 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.dlvis-flask">
-    <configuration name="dlvis-flask" type="PythonConfigurationType" factoryName="Python" singleton="true">
+  <component name="RunManager">
+    <configuration default="true" type="tests" factoryName="Nosetests">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="dlvis-flask" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="_new_regexPattern" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+    </configuration>
+    <configuration default="true" type="PythonConfigurationType" factoryName="Python">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
@@ -152,10 +146,41 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="dlvis-flask" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/run_keras_server.py" />
+      <option name="SCRIPT_NAME" value="" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="Unittests">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="dlvis-flask" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="py.test">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="dlvis-flask" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
     </configuration>
   </component>
   <component name="ShelveChangesManager" show_recycled="false">
@@ -211,7 +236,9 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="810">
           <caret line="61" column="40" lean-forward="false" selection-start-line="61" selection-start-column="40" selection-end-line="61" selection-end-column="40" />
-          <folding />
+          <folding>
+            <element signature="e#245#286#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -274,9 +301,11 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/run_keras_server.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="213">
-          <caret line="62" column="44" lean-forward="false" selection-start-line="62" selection-start-column="44" selection-end-line="62" selection-end-column="44" />
-          <folding />
+        <state relative-caret-position="471">
+          <caret line="107" column="0" lean-forward="true" selection-start-line="107" selection-start-column="0" selection-end-line="107" selection-end-column="0" />
+          <folding>
+            <element signature="e#245#286#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
