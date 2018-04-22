@@ -1,5 +1,4 @@
-import keras
-
+import dlv
 """
 Resnet50 layers classes
 
@@ -18,24 +17,39 @@ MaxPooling2D
 Add
 	keras.layers.merge.Add
 AveragePooling2D
+	keras.layers.AveragePooling2D
 Flatten
+	keras.layers.Flatten
 Dense
+	keras.layers.Dense
 
 """
 
 
 class Layer:
-	def __init__(self, k_layer, k_layerName: str):
+	def __init__(self, layerIdx:int, k_layer, k_layerClass: str, k_layerName:str):
 		"""
 
 		:param k_layer: a keras layer in keras.layers
 		"""
-		self._layer = k_layer
-		self._layerType = k_layerName
-		self._units = []
+		self._k_layer = k_layer
+		self._layerIdx = layerIdx
+		self._layerType = k_layerClass
+		self._layerName = k_layerName
+		self._filters = []
+		self._neuronSets = []
+		
+		self.setUnitsDependsOnType()
 	
-	def setUnits(self):
-		pass
+	def setUnitsDependsOnType(self):
+		if (self._layerType == 'Conv2D'):
+			weights = self._k_layer.get_weights()[0]
+			biases = self._k_layer.get_weights()[1]
+			for i in range(weights.shape[3]):
+				self._filters += [dlv.Filter(weights[:, :, :, i], biases[i])]
+		if (self._layerType == 'Dense'):
+			weights = self._k_layer.get_weights()[0]
+			biases = self._k_layer.get_weights()[1]
+			for i in range(weights.shape[1]):
+				self._neuronSets += [dlv.NeuronSet(weights[:, i], biases[i])]
 	
-	def getUnits(self):
-		pass

@@ -7,6 +7,7 @@
 #	python simple_request.py
 
 # import the necessary packages
+from flask_cors import CORS, cross_origin
 from keras.applications import ResNet50
 from keras.preprocessing.image import img_to_array
 from keras.applications import imagenet_utils
@@ -18,14 +19,15 @@ import json
 
 # initialize our Flask application and the Keras model
 app = flask.Flask(__name__)
+cors = CORS(app)
 model = ResNet50(weights="imagenet")
 
-def load_model():
+#def load_model():
 	# load the pre-trained Keras model (here we are using a model
 	# pre-trained on ImageNet and provided by Keras, but you can
 	# substitute in your own networks just as easily)
-	global model
-	model = ResNet50(weights="imagenet")
+#	global model
+#	model = ResNet50(weights="imagenet")
 
 def prepare_image(image, target):
 	# if the image mode is not RGB, convert it
@@ -76,11 +78,12 @@ def predict():
 	return flask.jsonify(data)
 
 @app.route("/layers/<int:model_id>", methods=["GET"])
+@cross_origin()
 def layers(model_id):
 	jmodel = json.loads(model.to_json())
 	layers = jmodel["config"]["layers"]
 
-	data = [layer['class_name'] for layer in layers]
+	data = [layer['name'] for layer in layers]
 
 	return flask.jsonify(data)
 
