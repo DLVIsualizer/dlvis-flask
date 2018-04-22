@@ -1,11 +1,8 @@
-<<<<<<< HEAD
-.DS_Store
-.idea/
-=======
-
 # custom ignore folder
 z_ignore/
 
+# pycache
+__pycache__
 
 .vscode
 *.sw*
@@ -13,6 +10,7 @@ z_ignore/
 
 # Intellij
 .idea/
+.idea/*
 *.iml
 *.iws
 
@@ -41,4 +39,4 @@ Thumbs.db
 *.exe
 *.o
 *.so
->>>>>>> 765181ae09dd4df67820799f05685a8ac3744144
+
