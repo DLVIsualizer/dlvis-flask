@@ -43,28 +43,57 @@ def prepare_image(image, target):
 	# return the processed image
 	return image
 
-def create_graph_json(layers):
-	graph_json = {}
-	nodes = []
+def build_html_with_layer(layer):
+	layer_class = layer['class_name']
+	layer_config = layer['config']
+	html = ""
+
+	if layer_class == 'InputLayer':
+		html = "input shape " + str(layer_config['batch_input_shape']) + "<br>"
+	elif layer_class == 'ZeroPadding2D':
+		html = "padding " + str(layer_config['padding']) + "<br>"
+	elif layer_class == 'Conv2D':
+		html = "filters " + str(layer_config['filters']) + "<br>" \
+			   "kernel size " + str(layer_config['kernel_size']) + "<br>" \
+			   "strides " + str(layer_config['strides']) + "<br>"
+	elif layer_class == 'BatchNormalization':
+		html = ""
+	elif layer_class == 'Activation':
+		html = "activation func</b> " + str(layer_config['activation'])
+	elif layer_class == 'MaxPooling2D':
+		html = "pool size " + str(layer_config['pool_size']) + "<br>" \
+			   "strides " + str(layer_config['strides']) + "<br>"
+
+	return html
+
+def create_model_graph(layers):
+
+	data = []
+	tooltip = {}
 	for idx, layer in enumerate(layers):
-		nodes.append({
-			"id": "n" + str(idx),
-			"label": layer
+		data.append({
+			"name": layer['name'],
+			"x": 500,
+			"y": idx*200,
+			"value": layer['class_name']
 		})
-
-	edges = []
+		tooltip[layer['name']] = build_html_with_layer(layer)
+	links = []
 	for idx in range(1, len(layers)):
-		edges.append({
-			"id": "e" + str(idx),
-			"source": "n" + str(idx-1),
-			"target": "n" + str(idx),
-			"label": "l" + str(idx)
+		links.append({
+			"source": idx-1,
+			"target": idx
 		})
 
-	graph_json['nodes'] = nodes
-	graph_json['edges'] = edges
+	model_graph = {
+		"graph": {
+			"data": data,
+			"links": links
+		},
+		"tooltip": tooltip
+	}
 
-	return graph_json
+	return model_graph
 
 @app.route("/predict", methods=["POST"])
 def predict():
@@ -106,9 +135,11 @@ def layers(model_id):
 	jmodel = json.loads(model.to_json())
 	layers = jmodel["config"]["layers"]
 
-	data = [layer['name'] for layer in layers]
+	# print(json.dumps(jmodel, indent=2, sort_keys=True))
 
-	return flask.jsonify(create_graph_json(data))
+	model_graph = create_model_graph(layers)
+	print(json.dumps(model_graph, indent=2, sort_keys=True))
+	return flask.jsonify(model_graph)
 
 # if this is the main thread of execution first load the model and
 # then start the server
