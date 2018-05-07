@@ -8,7 +8,7 @@
 
 # import the necessary packages
 from flask_cors import CORS, cross_origin
-from keras.applications import ResNet50
+from keras.applications import ResNet50, InceptionV3, VGG16
 from keras.preprocessing.image import img_to_array
 from keras.applications import imagenet_utils
 from PIL import Image
@@ -20,6 +20,7 @@ import json
 # initialize our Flask application and the Keras model
 app = flask.Flask(__name__)
 cors = CORS(app)
+# model = VGG16(weights="imagenet")
 model = ResNet50(weights="imagenet")
 
 #def load_model():
@@ -48,6 +49,7 @@ def build_html_with_layer(layer):
 	layer_config = layer['config']
 	html = ""
 
+	print(json.dumps(layer_config, indent=2, sort_keys=True))
 	if layer_class == 'InputLayer':
 		html = "input shape " + str(layer_config['batch_input_shape']) + "<br>"
 	elif layer_class == 'ZeroPadding2D':
@@ -138,7 +140,7 @@ def layers(model_id):
 	# print(json.dumps(jmodel, indent=2, sort_keys=True))
 
 	model_graph = create_model_graph(layers)
-	print(json.dumps(model_graph, indent=2, sort_keys=True))
+	# print(json.dumps(model_graph, indent=2, sort_keys=True))
 	return flask.jsonify(model_graph)
 
 # if this is the main thread of execution first load the model and
