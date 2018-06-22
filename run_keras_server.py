@@ -252,6 +252,7 @@ def build_html_with_layer(layer):
 	layer_config = layer['config']
 	html = ""
 
+	print(json.dumps(layer_config, indent=2, sort_keys=True))
 	if layer_class == 'InputLayer':
 		html = "input shape " + str(layer_config['batch_input_shape']) + "<br>"
 	elif layer_class == 'ZeroPadding2D':
