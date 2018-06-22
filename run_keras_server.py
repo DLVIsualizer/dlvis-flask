@@ -211,6 +211,7 @@ import numpy as np
 import flask
 import io
 import json
+import requests
 
 # initialize our Flask application and the Keras model
 app = flask.Flask(__name__)
@@ -341,12 +342,15 @@ def predict():
 @cross_origin()
 def layers(model_id):
 
-	if model_id == MODELS['ResNet50']:
-		jmodel = json.loads(resnetModel.to_json())
-	elif model_id == MODELS['InceptionV3']:
-		jmodel = json.loads(inceptionV3Model.to_json())
-	else:
-		return ('',204) # No Content
+	# model_Server도입으로 수정함 (PBW_180622)
+	# if model_id == MODELS['ResNet50']:
+	# 	jmodel = json.loads(resnetModel.to_json())
+	# elif model_id == MODELS['InceptionV3']:
+	# 	jmodel = json.loads(inceptionV3Model.to_json())
+	# else:
+	# 	return ('',204) # No Content
+	
+	jmodel = requests.get('127.0.0.1:5001')
 
 	layers = jmodel["config"]["layers"]
 

@@ -1,0 +1,30 @@
+목적
+* Keras 모델(2GB..?)을 불러오는 과정이 느리기 때문에, backend flask 서버를 실행시키는 것도 느려짐
+* 따라서 config서버를 계속 실행시켜놓고 그래프 좌표 생성하는 코드는 독립적으로 개발할 예정
+* 성능을 따지자면 추후에 합치는 것이 좋음
+
+	etc. (predict도 결국은 model_server에 요청해야함)
+
+파일이름
+	run_keras_model_server.py
+
+실행
+	--host=127.0.0.1 --port=5001
+	(Pycharm 실행 설정에 arguments로 추가하여 사용가능)
+	(app.run()에 인자로 port를 넘겨보았으나 동작하지 않음)
+	
+	혹은
+	set(or export) FLASK_APP=run_keras_model_server.py
+	flask run --host=127.0.0.1 --port=5001
+	
+	
+추가한 파일
+	run_relay_server.py
+	model_server에 요청해서 config나 predict결과를 받고, 이를 계산(좌표, 클리닝)하여 프론트에 넘겨줌
+	
+	
+
+	
+실행정리
+	1.  run_keras_model_server.py
+	2. run_relay_server.py
