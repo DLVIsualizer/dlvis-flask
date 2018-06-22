@@ -10,6 +10,7 @@ import flask
 import io
 import json
 import requests
+from collections import namedtuple
 
 # initialize our Flask application and the Keras model
 app = flask.Flask(__name__)
@@ -50,32 +51,73 @@ def build_html_with_layer(layer):
 	elif layer_class == 'BatchNormalization':
 		html = ""
 	elif layer_class == 'Activation':
-		html = "activation func</b> " + str(layer_config['activation'])
+		html = "activation func</b> " + str(layer_config['activation']) + "<br>"
 	elif layer_class == 'MaxPooling2D':
 		html = "pool size " + str(layer_config['pool_size']) + "<br>" \
 															   "strides " + str(layer_config['strides']) + "<br>"
+		
+	# 	TODO for debugging
+	if len(layer['inbound_nodes']) > 0:
+		html += "inbound_node : " + str(layer['inbound_nodes'][0][0][0]) + "<br>"
 
 	return html
 
 
 def create_model_graph(layers):
+	row_space = 200
+	col_space = 800
+	Node = namedtuple('Node','idx row col childNum')
+	nodes = {}
+	
 	data = []
+	links = []
 	tooltip = {}
+	
 	for idx, layer in enumerate(layers):
+		if len(layer['inbound_nodes']) == 0:
+			nodes[layer['name']] = Node(idx, idx, 0, 0)
+		elif len(layer['inbound_nodes'][0]) >0:
+			# Set parent
+			parent = nodes[layer['inbound_nodes'][0][0][0]]
+			col = parent.col + parent.childNum
+			
+			nodes[layer['name']] = Node(idx, parent.row+1, col, 0)
+			links.append({
+				"source": parent.idx,
+				"target": idx
+			})
+			
+			nodes[layer['inbound_nodes'][0][0][0]] = Node(parent.idx,parent.row,parent.col,parent.childNum+1)
+			
+			# Second Parent link set
+			iter = 1
+			while iter < len(layer['inbound_nodes'][0]):
+				parent = nodes[layer['inbound_nodes'][0][iter][0]]
+				links.append({
+					"source": parent.idx,
+					"target": idx,
+					"lineStyle": {
+						"width":3,
+						"opacity":1,
+						"type":"solid",
+						"curveness": 0.2
+					}
+				})
+				
+				nodes[layer['inbound_nodes'][0][iter][0]] = Node(parent.idx,parent.row,parent.col,parent.childNum+1)
+				iter +=1
+			
+			# parent.childNum += 1
+		this_node =nodes[layer['name']]
+		
 		data.append({
 			"name": layer['name'],
-			"x": 500,
-			"y": idx * 200,
+			"x": col_space*(this_node.col+1),
+			"y": row_space*(this_node.row+1),
 			"value": layer['class_name']
 		})
 		tooltip[layer['name']] = build_html_with_layer(layer)
-	links = []
-	for idx in range(1, len(layers)):
-		links.append({
-			"source": idx - 1,
-			"target": idx
-		})
-
+		
 	model_graph = {
 		"graph": {
 			"data": data,
@@ -128,9 +170,7 @@ def predict():
 @cross_origin()
 def layers(model_id):
 
-	print('...??')
 	dest = 'http://127.0.0.1:5001/layers/%d' % model_id
-	print('...??')
 	
 	jmodel = json.loads(requests.get(dest).text)
 
