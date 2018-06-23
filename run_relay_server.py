@@ -96,7 +96,19 @@ def create_model_graph(layers):
 			
 			# Set parent
 			maxParent = nodes[layer['inbound_nodes'][0][maxParentSeq][0]]
+			
+			# 현재 노드의 Column위치 계산
 			col = NodeNumInRow[maxParentRow + 1]
+			# 패런트가 2개이상 있을 때 모든 패런트가 같은 Column에 있어서 엣지가 안보이는 경우
+			# 노드를 오른쪽으로 한칸 미룸
+			if len(layer['inbound_nodes'][0]) > 1:
+				isAllParentsSameCol = True
+				for  inbound_node in layer['inbound_nodes'][0]:
+					if nodes[inbound_node[0]].col != col:
+						isAllParentsSameCol = False
+						break
+				if isAllParentsSameCol:
+					col +=1
 			
 			# 현재 노드 위치 세팅
 			# nodes[layer['name']] = Node(idx, parent.row + 1, col, 0)
@@ -118,38 +130,19 @@ def create_model_graph(layers):
 					"source": parent.idx,
 					"target": idx,
 					"lineStyle": {
-						"width": 3,
+					# 	"width": 3,
 						"curveness": 0.2
 					}
 				})
 				nodes[inbound_node[0]] = Node(parent.idx, parent.row, parent.col, parent.childNum + 1)
 		
-		# # 패런트가 2개이상 있을 때
-		# iter = 1
-		# while iter < len(layer['inbound_nodes'][0]):
-		# 	parent = nodes[layer['inbound_nodes'][0][iter][0]]
-		# 	links.append({
-		# 		"source": parent.idx,
-		# 		"target": idx,
-		# 		"lineStyle": {
-		# 			"width": 3,
-		# 			"curveness": 0.2
-		# 		}
-		# 	})
-		#
-		# 	# 찰드 갯수 증가
-		# 	nodes[layer['inbound_nodes'][0][iter][0]] = Node(parent.idx, parent.row, parent.col,
-		# 	                                                 parent.childNum + 1)
-		# 	iter += 1
-		
-		# parent.childNum += 1
-		
+		# 현재노드 설정
 		this_node = nodes[layer['name']]
 		
 		data.append({
 			"name": layer['name'],
-			"x": col_space * (this_node.col + 1),
-			"y": row_space * (this_node.row + 1),
+			"x": col_space * (this_node.col),
+			"y": row_space * (this_node.row),
 			"value": layer['class_name']
 		})
 		tooltip[layer['name']] = build_html_with_layer(layer)
