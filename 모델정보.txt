@@ -1,0 +1,5 @@
+resnet50
+	layer수:177
+
+inceptionV3
+	layer수:313
