@@ -207,7 +207,6 @@ def layers(model_id):
 	
 	# print(json.dumps(layers, indent=2, sort_keys=True))
 	
-	print('layerNum %d' % len(layers))
 	model_graph = create_model_graph(layers)
 	# print(json.dumps(model_graph, indent=2, sort_keys=True))
 	return flask.jsonify(model_graph)
