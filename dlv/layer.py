@@ -1,4 +1,5 @@
 import dlv
+import numpy as np
 """
 Resnet50 layers classes
 
@@ -44,12 +45,19 @@ class Layer:
 	def setUnitsDependsOnType(self):
 		if (self._layerType == 'Conv2D'):
 			weights = self._k_layer.get_weights()[0]
-			biases = self._k_layer.get_weights()[1]
+			if len(self._k_layer.get_weights()) > 1:
+				biases = self._k_layer.get_weights()[1]
+			else:
+				biases = np.zeros(weights.shape[3])
 			for i in range(weights.shape[3]):
 				self._filters += [dlv.Filter(weights[:, :, :, i], biases[i])]
+				
 		if (self._layerType == 'Dense'):
 			weights = self._k_layer.get_weights()[0]
-			biases = self._k_layer.get_weights()[1]
+			if len(self._k_layer.get_weights()) > 1:
+				biases = self._k_layer.get_weights()[1]
+			else:
+				biases = np.zeros(weights.shape[3])
 			for i in range(weights.shape[1]):
 				self._neuronSets += [dlv.NeuronSet(weights[:, i], biases[i])]
 	

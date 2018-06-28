@@ -15,6 +15,7 @@ class Model:
 		
 		# Set layers
 		self._layers = []
+		self._layerNameToIdx = {}
 		self.setLayers()
 		
 		# A Dictionary that has
@@ -23,10 +24,10 @@ class Model:
 		self._indata_FeatureMap_Dict = {}
 		self._indata_preparedIndata_Dict = {}
 		
-		# Set to be fetched layers
-		self._fetchedLayers = []
-		self._fetchedLayerIdx = {}
-		self.setFetchedLayer()
+		# Set to be fetched Tensors
+		self._fetchedTensors = []
+		self._fetchedTensorIdx = {}
+		self.setFetchedTensor()
 	
 	def setLayers(self):
 		"""
@@ -40,12 +41,14 @@ class Model:
 		k_layers = [layer for layer in self._k_model.layers]
 		k_layer_classs = [layer['class_name'] for layer in self._k_model.get_config()['layers']]
 		k_layer_names = [layer['name'] for layer in self._k_model.get_config()['layers']]
+		
 		for layerIdx, k_layer, k_layer_class, k_layer_name \
 				in \
 				zip(range(len(k_layers)), k_layers, k_layer_classs, k_layer_names):
 			self._layers += [dlv.Layer(layerIdx, k_layer, k_layer_class, k_layer_name)]
+			self._layerNameToIdx[k_layer_name] = self._layers[len(self._layers)-1]
 	
-	def setFetchedLayer(self):
+	def setFetchedTensor(self):
 		"""
 		Set To be fetched Layer
 		self._fetchedLayers's outputs are calculated at prediction, in function "getFeatures~()"
@@ -55,8 +58,8 @@ class Model:
 		counter = 0
 		for idx, layer in enumerate(self._layers):
 			if (layer._layerType == 'Conv2D' or layer._layerType == 'Dense'):
-				self._fetchedLayers += [self._k_model.get_layer(layer._layerName).output]
-				self._fetchedLayerIdx[counter] = idx
+				self._fetchedTensors += [self._k_model.get_layer(layer._layerName).output]
+				self._fetchedTensorIdx[counter] = idx
 				counter += 1
 	
 	def addInputData(self, imagePath: str):
@@ -114,7 +117,7 @@ class Model:
 			[preparedImg[0,:,:,:] for preparedImg in self._indata_preparedIndata_Dict.values()]
 		
 		preparedXList = np.stack(dimsCompressedPreparedImg, axis=0)
-		model = keras.models.Model(inputs=self._k_model.input, outputs=self._fetchedLayers)
+		model = keras.models.Model(inputs=self._k_model.input, outputs=self._fetchedTensors)
 		
 		results = model.predict(preparedXList)
 		

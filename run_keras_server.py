@@ -342,13 +342,12 @@ def predict():
 @cross_origin()
 def layers(model_id):
 
-	# model_Server도입으로 수정함 (PBW_180622)
-	# if model_id == MODELS['ResNet50']:
-	# 	jmodel = json.loads(resnetModel.to_json())
-	# elif model_id == MODELS['InceptionV3']:
-	# 	jmodel = json.loads(inceptionV3Model.to_json())
-	# else:
-	# 	return ('',204) # No Content
+	if model_id == MODELS['ResNet50']:
+		jmodel = json.loads(resnetModel.to_json())
+	elif model_id == MODELS['InceptionV3']:
+		jmodel = json.loads(inceptionV3Model.to_json())
+	else:
+		return ('',204) # No Content
 	
 	jmodel = requests.get('127.0.0.1:5001')
 

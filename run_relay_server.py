@@ -1,7 +1,5 @@
 from flask_cors import CORS, cross_origin
-from constants import MODELS
-from keras.applications import ResNet50
-from keras.applications import InceptionV3
+from constants import *
 from keras.preprocessing.image import img_to_array
 from keras.applications import imagenet_utils
 from PIL import Image
@@ -199,7 +197,7 @@ def predict():
 @app.route("/layers/<int:model_id>", methods=["GET"])
 @cross_origin()
 def layers(model_id):
-	dest = 'http://127.0.0.1:5001/layers/%d' % model_id
+	dest = kMODELSERVER_IP_PORT+ '/layers/%d' % model_id
 	
 	jmodel = json.loads(requests.get(dest).text)
 	
@@ -210,6 +208,16 @@ def layers(model_id):
 	model_graph = create_model_graph(layers)
 	# print(json.dumps(model_graph, indent=2, sort_keys=True))
 	return flask.jsonify(model_graph)
+
+
+@app.route("/filters/", methods=["GET"])
+@cross_origin()
+def filtersInLayer3D():
+	dest = kMODELSERVER_IP_PORT+ '/filters/'
+	dest += flask.request.url.partition('filters/')[2]
+	
+	ret = requests.get(dest).text
+	return ret
 
 
 # if this is the main thread of execution first load the model and

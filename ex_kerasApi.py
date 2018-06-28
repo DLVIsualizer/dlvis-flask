@@ -11,7 +11,6 @@ if __name__ == "__main__":
 	dlvModel.addInputData('cat.jpg')
 	dlvModel.getFeaturesFromFetchedList()
 	
-	
 	# Prepare pyplot
 	
 	w = 112
