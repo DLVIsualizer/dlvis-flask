@@ -43,6 +43,9 @@ def layers(model_id):
 	return flask.jsonify(jmodel)
 
 
+# 필터 커널x,커널y,inlayerNum,filter수 에서
+# inlayerNum,filter수,커널x,커널y로 바꿈
+#
 @app.route("/filters/", methods=["GET"])
 @cross_origin()
 def filtersInLayer3D():
@@ -57,7 +60,9 @@ def filtersInLayer3D():
 	
 	weights = dlvModel._k_model.get_layer(layer_name).get_weights()
 	if len(weights) > 0 :
-		return flask.jsonify(np.moveaxis(weights[0],-1,0).tolist())
+		moved = np.moveaxis(weights[0],-1,0)
+		moved = np.moveaxis(moved,-1,1)
+		return flask.jsonify(moved.tolist())
 	else:
 		#  TODO
 		return ('', 204)  # No Content
