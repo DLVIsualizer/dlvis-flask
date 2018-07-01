@@ -43,7 +43,7 @@ def layers(model_id):
 	return flask.jsonify(jmodel)
 
 
-# 필터 커널x,커널y,inlayerNum,filter수 에서
+# 필터 [커널x,커널y,inlayerNum,filter수] 에서
 # inlayerNum,filter수,커널x,커널y로 바꿈
 #
 @app.route("/filters/", methods=["GET"])
@@ -73,4 +73,4 @@ if __name__ == "__main__":
 	print(("* Loading Keras model and Flask starting server..."
 	       "please wait until server has fully started"))
 	app.debug=True
-	app.run()
+	app.run(port=5001)

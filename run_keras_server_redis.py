@@ -207,4 +207,4 @@ if __name__ == "__main__":
 
     # start the web server
     print("* Starting web service...")
-    app.run()
+    app.run(port=8000)
