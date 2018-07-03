@@ -9,6 +9,9 @@ import io
 import json
 import requests
 from collections import namedtuple
+import stream_to_logger
+import math
+import sys
 
 # initialize our Flask application and the Keras model
 app = flask.Flask(__name__)
@@ -101,12 +104,12 @@ def create_model_graph(layers):
 			# 노드를 오른쪽으로 한칸 미룸
 			if len(layer['inbound_nodes'][0]) > 1:
 				isAllParentsSameCol = True
-				for  inbound_node in layer['inbound_nodes'][0]:
+				for inbound_node in layer['inbound_nodes'][0]:
 					if nodes[inbound_node[0]].col != col:
 						isAllParentsSameCol = False
 						break
 				if isAllParentsSameCol:
-					col +=1
+					col += 1
 			
 			# 현재 노드 위치 세팅
 			# nodes[layer['name']] = Node(idx, parent.row + 1, col, 0)
@@ -118,7 +121,8 @@ def create_model_graph(layers):
 			})
 			
 			# 찰드 갯수 증가
-			nodes[layer['inbound_nodes'][0][maxParentSeq][0]] = Node(maxParent.idx, maxParent.row, maxParent.col,maxParent.childNum + 1)
+			nodes[layer['inbound_nodes'][0][maxParentSeq][0]] = Node(maxParent.idx, maxParent.row, maxParent.col,
+			                                                         maxParent.childNum + 1)
 			
 			for inbound_node in layer['inbound_nodes'][0]:
 				parent = nodes[inbound_node[0]]
@@ -128,7 +132,7 @@ def create_model_graph(layers):
 					"source": parent.idx,
 					"target": idx,
 					"lineStyle": {
-					# 	"width": 3,
+						# 	"width": 3,
 						"curveness": 0.2
 					}
 				})
@@ -197,7 +201,7 @@ def predict():
 @app.route("/layers/<int:model_id>", methods=["GET"])
 @cross_origin()
 def layers(model_id):
-	dest = kMODELSERVER_IP_PORT+ '/layers/%d' % model_id
+	dest = kMODELSERVER_IP_PORT + '/layers/%d' % model_id
 	
 	jmodel = json.loads(requests.get(dest).text)
 	
@@ -210,14 +214,78 @@ def layers(model_id):
 	return flask.jsonify(model_graph)
 
 
+# 필터 [커널x,커널y,inlayerNum,filter수] 에서
+# 먼저 [filter수,inlayerNum,커널x,커널y]로 바꿈
+# 그 후
+# [inlayerNum,[커널x,커널y,value]]로 바꿈
 @app.route("/filters/", methods=["GET"])
 @cross_origin()
 def filtersInLayer3D():
-	dest = kMODELSERVER_IP_PORT+ '/filters/'
+	ret = {};
+	dest = kMODELSERVER_IP_PORT + '/filters/'
 	dest += flask.request.url.partition('filters/')[2]
 	
-	ret = requests.get(dest).text
-	return ret
+	kBoxWidth = int(flask.request.args.get('box_width'))
+	kBoxHeight = int(flask.request.args.get('box_height'))
+	kRowSpace = int(flask.request.args.get('row_space'))
+	kColSpace = int(flask.request.args.get('col_space'))
+	
+	reqRet = requests.get(dest).text
+	filters = np.array(json.loads(reqRet))
+	
+	# 필터 [커널x,커널y,inlayerNum,filter수] 에서
+	# 먼저 [filter수,inlayerNum,커널x,커널y]로 바꿈
+	filters = np.moveaxis(filters, -1, 0)
+	filters = np.moveaxis(filters, -1, 1)
+	
+	kFilterNum = len(filters)
+	kDepthNum = len(filters[0])
+	kKernelWidth = len(filters[0][0])
+	kKernelHeight = len(filters[0][0][0])
+	kKernelArea = kKernelWidth * kKernelHeight
+	
+	kBoxValidArea = (kBoxWidth - kRowSpace) * (kBoxHeight - kColSpace);
+	
+	# Get Data And Option
+	kFilterWidth = int(math.sqrt(kBoxValidArea / kFilterNum));
+	kFilterHeight = kFilterWidth;
+	
+	maxColNum = int((kBoxWidth - kRowSpace) / kFilterWidth);
+	maxRowNum = int((kFilterNum - 1) / maxColNum) + 1;
+	valMin = sys.float_info.max;
+	valMax = -sys.float_info.max;
+	
+	dataInDepth = []
+	
+	
+	for d in range(0, kDepthNum):
+		datumInDepth = []
+		for f in range(0, kFilterNum):
+			for i in range(0, kKernelWidth):
+				for j in range(0, kKernelHeight):
+					value = filters[f][d][i][j]
+					valMax = max(valMax, value);
+					valMin = min(valMin, value);
+					
+					rowIdx = int(f / maxColNum);
+					colIdx = f - rowIdx * maxColNum;
+					
+					xPos = colIdx * kKernelWidth + i;
+					yPos = rowIdx * kKernelHeight + j;
+					datumInDepth += [[xPos, yPos, value]]
+					
+		dataInDepth += [datumInDepth]
+	
+	ret['head'] = {'filterNum': kFilterNum,
+	               'depthNum': kDepthNum,
+	               'kernelWidth': kKernelWidth,
+	               'kernelHeight': kKernelHeight,
+	               'valMin':valMin,
+	               'valMax':valMax
+	               }
+	ret['dataInDepth'] = dataInDepth
+	
+	return flask.jsonify(ret)
 
 
 # if this is the main thread of execution first load the model and
