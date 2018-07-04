@@ -7,6 +7,8 @@ import flask
 import json
 import dlv
 import numpy as np
+import stream_to_logger as LOGGER
+import sys
 
 # initialize our Flask application and the Keras model
 app = flask.Flask(__name__)
@@ -47,6 +49,9 @@ def layers(model_id):
 @app.route("/filters/", methods=["GET"])
 @cross_origin()
 def filtersInLayer3D():
+	uri = flask.request.url.partition('filters/')[2]
+	LOGGER.fl.startFunction(sys._getframe())
+	
 	model_id= int(flask.request.args.get('model_id'))
 	layer_name= flask.request.args.get('layer_name')
 	
@@ -59,6 +64,8 @@ def filtersInLayer3D():
 	# weight이 있는 레이어의 경우만 결과 리턴
 	weights = dlvModel._k_model.get_layer(layer_name).get_weights()
 	if len(weights) > 0 :
+		LOGGER.fl.endFuction(sys._getframe(),uri)
+		
 		return flask.jsonify(weights[0].tolist())
 	# weight이 없을 경우
 	else:

@@ -9,9 +9,11 @@ import io
 import json
 import requests
 from collections import namedtuple
-import stream_to_logger
+import logging
+import stream_to_logger as LOGGER
 import math
 import sys
+import time
 
 # initialize our Flask application and the Keras model
 app = flask.Flask(__name__)
@@ -221,9 +223,12 @@ def layers(model_id):
 @app.route("/filters/", methods=["GET"])
 @cross_origin()
 def filtersInLayer3D():
+	LOGGER.fl.startFunction(sys._getframe())
+	
 	ret = {};
 	dest = kMODELSERVER_IP_PORT + '/filters/'
-	dest += flask.request.url.partition('filters/')[2]
+	uri = flask.request.url.partition('filters/')[2]
+	dest += uri
 	
 	kBoxWidth = int(flask.request.args.get('box_width'))
 	kBoxHeight = int(flask.request.args.get('box_height'))
@@ -257,7 +262,6 @@ def filtersInLayer3D():
 	
 	dataInDepth = []
 	
-	
 	for d in range(0, kDepthNum):
 		datumInDepth = []
 		for f in range(0, kFilterNum):
@@ -273,17 +277,19 @@ def filtersInLayer3D():
 					xPos = colIdx * kKernelWidth + i;
 					yPos = rowIdx * kKernelHeight + j;
 					datumInDepth += [[xPos, yPos, value]]
-					
+		
 		dataInDepth += [datumInDepth]
 	
 	ret['head'] = {'filterNum': kFilterNum,
 	               'depthNum': kDepthNum,
 	               'kernelWidth': kKernelWidth,
 	               'kernelHeight': kKernelHeight,
-	               'valMin':valMin,
-	               'valMax':valMax
+	               'valMin': valMin,
+	               'valMax': valMax
 	               }
 	ret['dataInDepth'] = dataInDepth
+	
+	LOGGER.fl.endFuction(sys._getframe(), uri)
 	
 	return flask.jsonify(ret)
 
