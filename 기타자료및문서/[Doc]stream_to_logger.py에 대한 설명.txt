@@ -1,0 +1,15 @@
+* stream_to_logger.py
+	이 클래스 안에는 주석으로 처리된 StreamToLogger클래스가 있다.
+	주석 해제 시에는 이 파일을 import한 프로그램 내에서 stderr를 "stderr.log"로 redirection함 (stderr가 콘솔에 안보임 ㅠㅠ)
+	
+* FunctionProfileLogger클래스
+	이 클래스는 특정 함수에 시작 점에 호출, 끝 부분에 호출하는 코드를 넣어 수행시간을 체크한다.
+	체크한 수행시간은 "profileFunction.log"로 저장됨
+	
+현재 run_keras_model_server.py와 run_relay_server.py모두 stream_to_logger.py를 import하고 있음
+
+물론 flask-profiler, line-profiler와 같은 툴도 존재하나 일단은 이방법으로..ㅠㅠ
+성능을 위해선 후에 logger클래스를 다른 프로세스로 떼내거나, 코드를 없애는게 필요
+
+https://github.com/muatik/flask-profiler
+https://github.com/rkern/line_profiler

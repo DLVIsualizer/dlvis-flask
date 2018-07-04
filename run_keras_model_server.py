@@ -20,16 +20,16 @@ resnetModel = ResNet50(weights="imagenet")
 dlvResnet = dlv.Model(resnetModel)
 
 inceptionV3Model = InceptionV3(weights="imagenet")
-dlvInception= dlv.Model(inceptionV3Model)
+dlvInception = dlv.Model(inceptionV3Model)
 
 modelIdToKerasModel = {
-	MODELS['ResNet50'] : resnetModel,
-	MODELS['InceptionV3'] : inceptionV3Model
+	MODELS['ResNet50']: resnetModel,
+	MODELS['InceptionV3']: inceptionV3Model
 }
 
 modelIdToDlvModel = {
-	MODELS['ResNet50'] : dlvResnet,
-	MODELS['InceptionV3'] : dlvInception
+	MODELS['ResNet50']: dlvResnet,
+	MODELS['InceptionV3']: dlvInception
 }
 
 
@@ -38,12 +38,11 @@ modelIdToDlvModel = {
 def layers(model_id):
 	retModel = modelIdToKerasModel.get(model_id)
 	if retModel != None:
-		jmodel  = json.loads(retModel.to_json())
+		jmodel = json.loads(retModel.to_json())
 	else:
 		return ('', 204)  # No Content
 	
 	return flask.jsonify(jmodel)
-
 
 
 @app.route("/filters/", methods=["GET"])
@@ -52,30 +51,44 @@ def filtersInLayer3D():
 	uri = flask.request.url.partition('filters/')[2]
 	LOGGER.fl.startFunction(sys._getframe())
 	
-	model_id= int(flask.request.args.get('model_id'))
-	layer_name= flask.request.args.get('layer_name')
+	model_id = int(flask.request.args.get('model_id'))
+	layer_name = flask.request.args.get('layer_name')
 	
 	retModel = modelIdToDlvModel.get(model_id)
 	if retModel != None:
-		dlvModel  = retModel
+		dlvModel = retModel
 	else:
 		return ('', 204)  # No Content
 	
 	# weight이 있는 레이어의 경우만 결과 리턴
 	weights = dlvModel._k_model.get_layer(layer_name).get_weights()
-	if len(weights) > 0 :
-		LOGGER.fl.endFuction(sys._getframe(),uri)
+	if len(weights) > 0:
+		# dtype : float32
+		filters = weights[0]
+		res = flask.Response(
+			response=filters.tobytes(),
+			status=200,
+			headers={
+				'KernelWidth': len(filters),
+				'KernelHeight': len(filters[0]),
+				'DepthNum': len(filters[0][0]),
+				'FilterNum': len(filters[0][0][0])
+			}
+		)
+		LOGGER.fl.endFuction(sys._getframe(), uri)
 		
-		return flask.jsonify(weights[0].tolist())
+		# return flask.jsonify(weights[0].tolist())
+		return res
 	# weight이 없을 경우
 	else:
 		#  TODO
 		return ('', 204)  # No Content
+
 
 # if this is the main thread of execution first load the model and
 # then start the server
 if __name__ == "__main__":
 	print(("* Loading Keras model and Flask starting server..."
 	       "please wait until server has fully started"))
-	app.debug=True
+	app.debug = True
 	app.run(port=5001)

@@ -9,11 +9,9 @@ import io
 import json
 import requests
 from collections import namedtuple
-import logging
 import stream_to_logger as LOGGER
 import math
 import sys
-import time
 
 # initialize our Flask application and the Keras model
 app = flask.Flask(__name__)
@@ -235,19 +233,22 @@ def filtersInLayer3D():
 	kRowSpace = int(flask.request.args.get('row_space'))
 	kColSpace = int(flask.request.args.get('col_space'))
 	
-	reqRet = requests.get(dest).text
-	filters = np.array(json.loads(reqRet))
+	# bytes로 넘어온 numpy 어레이 불러옴
+	#참조 https://markhneedham.com/blog/2018/04/07/python-serialize-deserialize-numpy-2d-arrays/
+	reqRet = requests.get(dest)
+	filters = np.frombuffer(reqRet.content, dtype='float32')
+	kFilterNum = int(reqRet.headers.get('FilterNum'))
+	kDepthNum = int(reqRet.headers.get('DepthNum'))
+	kKernelWidth = int(reqRet.headers.get('KernelWidth'))
+	kKernelHeight = int(reqRet.headers.get('KernelHeight'))
+	kKernelArea = kKernelWidth * kKernelHeight
+	filters = filters.reshape((kKernelWidth,kKernelHeight,kDepthNum,kFilterNum))
 	
 	# 필터 [커널x,커널y,inlayerNum,filter수] 에서
 	# 먼저 [filter수,inlayerNum,커널x,커널y]로 바꿈
 	filters = np.moveaxis(filters, -1, 0)
 	filters = np.moveaxis(filters, -1, 1)
 	
-	kFilterNum = len(filters)
-	kDepthNum = len(filters[0])
-	kKernelWidth = len(filters[0][0])
-	kKernelHeight = len(filters[0][0][0])
-	kKernelArea = kKernelWidth * kKernelHeight
 	
 	kBoxValidArea = (kBoxWidth - kRowSpace) * (kBoxHeight - kColSpace);
 	
@@ -260,14 +261,17 @@ def filtersInLayer3D():
 	valMin = sys.float_info.max;
 	valMax = -sys.float_info.max;
 	
-	dataInDepth = []
+	# hotspot##################
+	LOGGER.fl.startLine(sys._getframe())
+	dataInDepth = np.zeros((kDepthNum,kFilterNum*kKernelWidth*kKernelHeight,3))
 	
 	for d in range(0, kDepthNum):
-		datumInDepth = []
+		iter = 0
 		for f in range(0, kFilterNum):
 			for i in range(0, kKernelWidth):
 				for j in range(0, kKernelHeight):
-					value = filters[f][d][i][j]
+					# 주의 : numpy.float64 is JSON serializable but numpy.float32 is not
+					value = np.asscalar(filters[f][d][i][j])
 					valMax = max(valMax, value);
 					valMin = min(valMin, value);
 					
@@ -276,9 +280,11 @@ def filtersInLayer3D():
 					
 					xPos = colIdx * kKernelWidth + i;
 					yPos = rowIdx * kKernelHeight + j;
-					datumInDepth += [[xPos, yPos, value]]
-		
-		dataInDepth += [datumInDepth]
+					dataInDepth[d][iter] = [xPos, yPos, value]
+					iter+=1
+	LOGGER.fl.endLine(sys._getframe())
+	###################################
+	
 	
 	ret['head'] = {'filterNum': kFilterNum,
 	               'depthNum': kDepthNum,
@@ -287,7 +293,8 @@ def filtersInLayer3D():
 	               'valMin': valMin,
 	               'valMax': valMax
 	               }
-	ret['dataInDepth'] = dataInDepth
+	ret['dataInDepth'] = dataInDepth.tolist()
+	
 	
 	LOGGER.fl.endFuction(sys._getframe(), uri)
 	

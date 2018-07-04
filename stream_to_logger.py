@@ -40,6 +40,7 @@ class FunctionProfileLogger(object):
 		self.log_level = log_level
 		self.linebuf = ''
 		self.functionMaps = {}
+		self.functionLineMaps = {}
 	
 	# logger write redirection
 	def write(self, buf):
@@ -48,7 +49,7 @@ class FunctionProfileLogger(object):
 	
 	def startFunction(self, frame):
 		if self.isDebugging():
-			self.functionMaps[frame.f_code.co_name] = start_time = time.perf_counter()
+			self.functionMaps[frame.f_code.co_name] = time.perf_counter()
 		else:
 			pass
 	
@@ -59,6 +60,22 @@ class FunctionProfileLogger(object):
 			                  (ntpath.basename(frame.f_code.co_filename), frame.f_code.co_name,elapsed,additional))
 		else:
 			pass
+		
+	def startLine(self, frame):
+		if self.isDebugging():
+			self.functionLineMaps[frame.f_code.co_name] = (frame.f_lineno,time.perf_counter())
+		else:
+			pass
+		
+	def endLine(self,frame,additional=""):
+		if self.isDebugging():
+			startLine =self.functionLineMaps[frame.f_code.co_name][0]
+			elapsed = (time.perf_counter() - self.functionLineMaps[frame.f_code.co_name][1])
+			self.logger.debug("%25s %25s %10.5fs (line:%s-%s) (%s)" %
+			                  (ntpath.basename(frame.f_code.co_filename), frame.f_code.co_name,elapsed,startLine,frame.f_lineno,additional))
+		else:
+			pass
+	
 	
 	def isDebugging(self):
 		return self.logger.isEnabledFor(logging.DEBUG)
