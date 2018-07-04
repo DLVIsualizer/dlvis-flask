@@ -1,0 +1,6 @@
+* ndarray를 flask.jsonify()로 json으로 바꾸고,
+	이를 다시 np.array(json.loads()) 로 ndarray로 바꾸는 것은 부하가 큼(json.loads()에서 오래걸림)
+	따라서 ndarray.tobytes()로 전송하고, np.frombuffer(bytes, dtype=원래타입).reshape(원래 쉐입) 으로 불러오는 것이 효과적
+	
+* 파이선 기본자료형이 아닌 numpy에서 존재하는 타입(ex,float32 ... 등)과 같은 경우json으로 변환 불가
+	따라서 np.asscalar(numpy데이터)로 변환해주어야함

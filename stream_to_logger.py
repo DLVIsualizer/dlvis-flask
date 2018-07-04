@@ -53,7 +53,7 @@ class FunctionProfileLogger(object):
 		else:
 			pass
 	
-	def endFuction(self, frame, additional=""):
+	def endFunction(self, frame, additional=""):
 		if self.isDebugging():
 			elapsed = (time.perf_counter() - self.functionMaps[frame.f_code.co_name])
 			self.logger.debug("%25s %25s %10.5fs (%s)" %

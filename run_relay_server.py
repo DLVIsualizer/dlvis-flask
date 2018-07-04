@@ -12,6 +12,7 @@ from collections import namedtuple
 import stream_to_logger as LOGGER
 import math
 import sys
+from numba import jit,njit
 
 # initialize our Flask application and the Keras model
 app = flask.Flask(__name__)
@@ -213,6 +214,38 @@ def layers(model_id):
 	# print(json.dumps(model_graph, indent=2, sort_keys=True))
 	return flask.jsonify(model_graph)
 
+# Helper function
+# @app.route("/filters/", methods=["GET"])
+# @cross_origin()
+# 위 메소드에서 호출
+# @njit(fastmath=True, parallel=True)
+@njit(fastmath=True)
+def cvtFiltersToEchartCoord(filters,kDepthNum,kFilterNum,kKernelWidth,kKernelHeight,maxColNum):
+
+	valMin = np.finfo(np.float32).max;
+	valMax = -valMin;
+	
+	dataInDepth = np.zeros((kDepthNum, kFilterNum * kKernelWidth * kKernelHeight, 3))
+	
+	for d in range(kDepthNum):
+		iter = 0
+		for f in range(kFilterNum):
+			for i in range(kKernelWidth):
+				for j in range(kKernelHeight):
+					# 주의 : numpy.float64 is JSON serializable but numpy.float32 is not
+					value = np.float64(filters[f][d][i][j])
+					valMax = max(valMax, value);
+					valMin = min(valMin, value);
+					
+					rowIdx = int(f / maxColNum);
+					colIdx = f - rowIdx * maxColNum;
+					
+					xPos = colIdx * kKernelWidth + i;
+					yPos = rowIdx * kKernelHeight + j;
+					dataInDepth[d][iter] = [xPos, yPos, value]
+					iter += 1
+	
+	return (dataInDepth,valMin,valMax)
 
 # 필터 [커널x,커널y,inlayerNum,filter수] 에서
 # 먼저 [filter수,inlayerNum,커널x,커널y]로 바꿈
@@ -234,7 +267,7 @@ def filtersInLayer3D():
 	kColSpace = int(flask.request.args.get('col_space'))
 	
 	# bytes로 넘어온 numpy 어레이 불러옴
-	#참조 https://markhneedham.com/blog/2018/04/07/python-serialize-deserialize-numpy-2d-arrays/
+	# 참조 https://markhneedham.com/blog/2018/04/07/python-serialize-deserialize-numpy-2d-arrays/
 	reqRet = requests.get(dest)
 	filters = np.frombuffer(reqRet.content, dtype='float32')
 	kFilterNum = int(reqRet.headers.get('FilterNum'))
@@ -258,32 +291,14 @@ def filtersInLayer3D():
 	
 	maxColNum = int((kBoxWidth - kRowSpace) / kFilterWidth);
 	maxRowNum = int((kFilterNum - 1) / maxColNum) + 1;
-	valMin = sys.float_info.max;
-	valMax = -sys.float_info.max;
 	
-	# hotspot##################
+	
 	LOGGER.fl.startLine(sys._getframe())
-	dataInDepth = np.zeros((kDepthNum,kFilterNum*kKernelWidth*kKernelHeight,3))
+	cvtRet= cvtFiltersToEchartCoord(filters,kDepthNum,kFilterNum,kKernelWidth,kKernelHeight,maxColNum)
 	
-	for d in range(0, kDepthNum):
-		iter = 0
-		for f in range(0, kFilterNum):
-			for i in range(0, kKernelWidth):
-				for j in range(0, kKernelHeight):
-					# 주의 : numpy.float64 is JSON serializable but numpy.float32 is not
-					value = np.asscalar(filters[f][d][i][j])
-					valMax = max(valMax, value);
-					valMin = min(valMin, value);
-					
-					rowIdx = int(f / maxColNum);
-					colIdx = f - rowIdx * maxColNum;
-					
-					xPos = colIdx * kKernelWidth + i;
-					yPos = rowIdx * kKernelHeight + j;
-					dataInDepth[d][iter] = [xPos, yPos, value]
-					iter+=1
-	LOGGER.fl.endLine(sys._getframe())
-	###################################
+	dataInDepth = cvtRet[0]
+	valMin = cvtRet[1]
+	valMax = cvtRet[2]
 	
 	
 	ret['head'] = {'filterNum': kFilterNum,
@@ -295,10 +310,14 @@ def filtersInLayer3D():
 	               }
 	ret['dataInDepth'] = dataInDepth.tolist()
 	
+	LOGGER.fl.endLine(sys._getframe())
 	
-	LOGGER.fl.endFuction(sys._getframe(), uri)
+	LOGGER.fl.endFunction(sys._getframe(),uri)
 	
 	return flask.jsonify(ret)
+
+
+
 
 
 # if this is the main thread of execution first load the model and

@@ -75,7 +75,7 @@ def filtersInLayer3D():
 				'FilterNum': len(filters[0][0][0])
 			}
 		)
-		LOGGER.fl.endFuction(sys._getframe(), uri)
+		LOGGER.fl.endFunction(sys._getframe(), uri)
 		
 		# return flask.jsonify(weights[0].tolist())
 		return res
