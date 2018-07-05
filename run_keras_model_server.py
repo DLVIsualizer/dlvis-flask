@@ -77,7 +77,6 @@ def filtersInLayer3D():
 		)
 		LOGGER.fl.endFunction(sys._getframe(), uri)
 		
-		# return flask.jsonify(weights[0].tolist())
 		return res
 	# weight이 없을 경우
 	else:

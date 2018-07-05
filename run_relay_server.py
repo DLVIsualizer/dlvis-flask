@@ -12,11 +12,20 @@ from collections import namedtuple
 import stream_to_logger as LOGGER
 import math
 import sys
-from numba import jit,njit
+from numba import jit, njit
 
 # initialize our Flask application and the Keras model
 app = flask.Flask(__name__)
-cors = CORS(app)
+allowableHeader = [
+	'filterNum',
+	'depthNum',
+	'kernelWidth',
+	'kernelHeight',
+	'valMin',
+	'valMax',
+	'content-length'
+]
+cors = CORS(app, expose_headers=allowableHeader)
 
 
 def prepare_image(image, target):
@@ -214,14 +223,14 @@ def layers(model_id):
 	# print(json.dumps(model_graph, indent=2, sort_keys=True))
 	return flask.jsonify(model_graph)
 
+
 # Helper function
 # @app.route("/filters/", methods=["GET"])
 # @cross_origin()
 # 위 메소드에서 호출
 # @njit(fastmath=True, parallel=True)
 @njit(fastmath=True)
-def cvtFiltersToEchartCoord(filters,kDepthNum,kFilterNum,kKernelWidth,kKernelHeight,maxColNum):
-
+def cvtFiltersToEchartCoord(filters, kDepthNum, kFilterNum, kKernelWidth, kKernelHeight, maxColNum):
 	valMin = np.finfo(np.float32).max;
 	valMax = -valMin;
 	
@@ -245,18 +254,18 @@ def cvtFiltersToEchartCoord(filters,kDepthNum,kFilterNum,kKernelWidth,kKernelHei
 					dataInDepth[d][iter] = [xPos, yPos, value]
 					iter += 1
 	
-	return (dataInDepth,valMin,valMax)
+	return (dataInDepth, valMin, valMax)
+
 
 # 필터 [커널x,커널y,inlayerNum,filter수] 에서
 # 먼저 [filter수,inlayerNum,커널x,커널y]로 바꿈
 # 그 후
 # [inlayerNum,[커널x,커널y,value]]로 바꿈
 @app.route("/filters/", methods=["GET"])
-@cross_origin()
+@cross_origin(expose_headers=allowableHeader)
 def filtersInLayer3D():
 	LOGGER.fl.startFunction(sys._getframe())
 	
-	ret = {};
 	dest = kMODELSERVER_IP_PORT + '/filters/'
 	uri = flask.request.url.partition('filters/')[2]
 	dest += uri
@@ -275,13 +284,12 @@ def filtersInLayer3D():
 	kKernelWidth = int(reqRet.headers.get('KernelWidth'))
 	kKernelHeight = int(reqRet.headers.get('KernelHeight'))
 	kKernelArea = kKernelWidth * kKernelHeight
-	filters = filters.reshape((kKernelWidth,kKernelHeight,kDepthNum,kFilterNum))
+	filters = filters.reshape((kKernelWidth, kKernelHeight, kDepthNum, kFilterNum))
 	
 	# 필터 [커널x,커널y,inlayerNum,filter수] 에서
 	# 먼저 [filter수,inlayerNum,커널x,커널y]로 바꿈
 	filters = np.moveaxis(filters, -1, 0)
 	filters = np.moveaxis(filters, -1, 1)
-	
 	
 	kBoxValidArea = (kBoxWidth - kRowSpace) * (kBoxHeight - kColSpace);
 	
@@ -292,32 +300,33 @@ def filtersInLayer3D():
 	maxColNum = int((kBoxWidth - kRowSpace) / kFilterWidth);
 	maxRowNum = int((kFilterNum - 1) / maxColNum) + 1;
 	
-	
-	LOGGER.fl.startLine(sys._getframe())
-	cvtRet= cvtFiltersToEchartCoord(filters,kDepthNum,kFilterNum,kKernelWidth,kKernelHeight,maxColNum)
+	cvtRet = cvtFiltersToEchartCoord(filters, kDepthNum, kFilterNum, kKernelWidth, kKernelHeight, maxColNum)
 	
 	dataInDepth = cvtRet[0]
 	valMin = cvtRet[1]
 	valMax = cvtRet[2]
 	
+	LOGGER.fl.startLine(sys._getframe())
 	
-	ret['head'] = {'filterNum': kFilterNum,
-	               'depthNum': kDepthNum,
-	               'kernelWidth': kKernelWidth,
-	               'kernelHeight': kKernelHeight,
-	               'valMin': valMin,
-	               'valMax': valMax
-	               }
-	ret['dataInDepth'] = dataInDepth.tolist()
+	res = flask.Response(
+		response=dataInDepth.tobytes().hex(),
+		status=200,
+		mimetype='application/octet-stream',
+		headers={
+			'filterNum': kFilterNum,
+			'depthNum': kDepthNum,
+			'kernelWidth': kKernelWidth,
+			'kernelHeight': kKernelHeight,
+			'valMin': valMin,
+			'valMax': valMax
+		}
+	)
 	
 	LOGGER.fl.endLine(sys._getframe())
+	len = res.content_length
 	
-	LOGGER.fl.endFunction(sys._getframe(),uri)
-	
-	return flask.jsonify(ret)
-
-
-
+	LOGGER.fl.endFunction(sys._getframe(), uri+'  len: '+str(len))
+	return res
 
 
 # if this is the main thread of execution first load the model and
