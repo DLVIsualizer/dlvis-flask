@@ -309,9 +309,11 @@ def filtersInLayer3D():
 	LOGGER.fl.startLine(sys._getframe())
 	
 	res = flask.Response(
-		response=dataInDepth.tobytes().hex(),
+		# response=dataInDepth.tobytes().hex(),
+		response=dataInDepth.tobytes(),
 		status=200,
-		mimetype='application/octet-stream',
+		# mimetype='application/octet-stream',
+		mimetype='stream',
 		headers={
 			'filterNum': kFilterNum,
 			'depthNum': kDepthNum,
