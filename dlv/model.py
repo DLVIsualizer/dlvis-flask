@@ -26,7 +26,7 @@ class Model:
 		
 		# Set to be fetched Tensors
 		self._fetchedTensors = []
-		self._fetchedTensorIdx = {}
+		self._fetchedTensorNameToIdxMap = {}
 		self.setFetchedTensor()
 	
 	def setLayers(self):
@@ -57,9 +57,9 @@ class Model:
 		"""
 		counter = 0
 		for idx, layer in enumerate(self._layers):
-			if (layer._layerType == 'Conv2D' or layer._layerType == 'Dense'):
+			if (layer._layerType == 'Activation' or layer._layerType == 'Dense'):
 				self._fetchedTensors += [self._k_model.get_layer(layer._layerName).output]
-				self._fetchedTensorIdx[counter] = idx
+				self._fetchedTensorNameToIdxMap[layer._layerName] = counter
 				counter += 1
 	
 	def addInputData(self, imagePath: str):

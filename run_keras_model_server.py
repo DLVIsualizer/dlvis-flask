@@ -18,6 +18,8 @@ cors = CORS(app)
 # PBW: 0505_18
 resnetModel = ResNet50(weights="imagenet")
 dlvResnet = dlv.Model(resnetModel)
+dlvResnet.addInputData('dog.jpg')
+dlvResnet.getFeaturesFromFetchedList()
 
 inceptionV3Model = InceptionV3(weights="imagenet")
 dlvInception = dlv.Model(inceptionV3Model)
@@ -83,6 +85,41 @@ def filtersInLayer3D():
 		#  TODO
 		return ('', 204)  # No Content
 
+
+@app.route("/activations/", methods=["GET"])
+@cross_origin()
+def getActivations():
+	uri = flask.request.url.partition('activations/')[2]
+	LOGGER.fl.startFunction(sys._getframe())
+	
+	model_id = int(flask.request.args.get('model_id'))
+	layer_name = flask.request.args.get('layer_name')
+	
+	retModel = modelIdToDlvModel.get(model_id)
+	if retModel != None:
+		dlvModel = retModel
+	else:
+		return ('', 204)  # No Content
+	
+	# Activation있는 레이어의 경우만 결과 리턴
+	if retModel._indata_FeatureMap_Dict['dog.jpg'] != None:
+		targetLayerIdx = retModel._fetchedTensorNameToIdxMap[layer_name]
+		activationResult= retModel._indata_FeatureMap_Dict['dog.jpg']._featureMapList[targetLayerIdx]
+		res = flask.Response(
+			response=activationResult.tobytes(),
+			status=200,
+			headers={
+				'Width': len(activationResult),
+				'Height': len(activationResult[0]),
+				'FilterNum': len(activationResult[0][0]),
+			}
+		)
+		return res
+	
+	# Activation이 없을 경우
+	else:
+		#  TODO
+		return ('', 204)  # No Content
 
 # if this is the main thread of execution first load the model and
 # then start the server

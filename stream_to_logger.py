@@ -34,6 +34,7 @@ import ntpath
 
 # 기타 로깅 가이드
 # http://hamait.tistory.com/880
+
 class FunctionProfileLogger(object):
 	def __init__(self, logger, log_level=logging.INFO):
 		self.logger = logger
@@ -92,3 +93,50 @@ file_handler.setFormatter(formatter)
 funcionLog.addHandler(file_handler)
 
 fl = FunctionProfileLogger(funcionLog, logging.DEBUG)
+
+
+class AnyDataLogger(object):
+	def __init__(self, logger, log_level=logging.INFO):
+		self.logger = logger
+		self.log_level = log_level
+		self.linebuf = ''
+		self.functionMaps = {}
+		self.functionLineMaps = {}
+	
+	# logger write redirection
+	def write(self, buf):
+		for line in buf.rstrip().splitlines():
+			self.logger.log(self.log_level, line.rstrip())
+	
+	def startLine(self, frame):
+		if self.isDebugging():
+			self.functionLineMaps[frame.f_code.co_name] = (frame.f_lineno, time.perf_counter())
+		else:
+			pass
+	
+	def Log(self, frame, additional=""):
+		if self.isDebugging():
+			startLine = self.functionLineMaps[frame.f_code.co_name][0]
+			self.logger.debug("%25s %25s (line:%s): %s" %
+			                  (ntpath.basename(frame.f_code.co_filename),
+			                   frame.f_code.co_name,
+			                   startLine,
+			                   frame.f_lineno,
+			                   additional))
+		else:
+			pass
+	
+	def isDebugging(self):
+		return self.logger.isEnabledFor(logging.DEBUG)
+	
+# Any data 로거
+anyDataLog = logging.getLogger("AnyData")
+anyDataLog.setLevel(logging.DEBUG)
+
+anyDataformatter = logging.Formatter('%(asctime)s/%(levelname)s::%(message)s')
+
+anyDataFile_handler = logging.FileHandler('anyData.log')
+anyDataFile_handler.setFormatter(anyDataformatter)
+anyDataLog.addHandler(anyDataFile_handler)
+
+any = AnyDataLogger(anyDataLog, logging.DEBUG)
