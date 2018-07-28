@@ -308,16 +308,16 @@ def getFiltersInLayer(uri,kBoxWidth, kBoxHeight, kRowSpace, kColSpace):
 	return res
 
 
-# Helper function
-# def getFiltersInLayer(uri,model_id, layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSpace):
-# 위 메소드에서 호출
+# # Helper function
+# # def getFiltersInLayer(uri,model_id, layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSpace):
+# # 위 메소드에서 호출
 @njit(fastmath=True)
 def cvtFiltersToEchartCoord(filters, kDepthNum, kFilterNum, kKernelWidth, kKernelHeight, maxColNum):
 	valMin = np.finfo(np.float32).max;
 	valMax = -valMin;
-	
+
 	dataInDepth = np.zeros((kDepthNum, kFilterNum * kKernelWidth * kKernelHeight, 3))
-	
+
 	for d in range(kDepthNum):
 		iter = 0
 		for f in range(kFilterNum):
@@ -327,16 +327,45 @@ def cvtFiltersToEchartCoord(filters, kDepthNum, kFilterNum, kKernelWidth, kKerne
 					value = np.float64(filters[f][d][i][j])
 					valMax = max(valMax, value);
 					valMin = min(valMin, value);
-					
+
 					rowIdx = int(f / maxColNum);
 					colIdx = f - rowIdx * maxColNum;
-					
+
 					xPos = colIdx * kKernelWidth + i;
 					yPos = rowIdx * kKernelHeight + j;
 					dataInDepth[d][iter] = [xPos, yPos, value]
 					iter += 1
-	
+
 	return (dataInDepth, valMin, valMax)
+
+
+# 3D
+# @njit(fastmath=True)
+# def cvtFiltersToEchartCoord(filters, kDepthNum, kFilterNum, kKernelWidth, kKernelHeight, maxColNum):
+# 	valMin = np.finfo(np.float32).max;
+# 	valMax = -valMin;
+#
+# 	dataInDepth = np.zeros((kDepthNum, kFilterNum * kKernelWidth * kKernelHeight, 4))
+#
+# 	for d in range(kDepthNum):
+# 		iter = 0
+# 		for f in range(kFilterNum):
+# 			for i in range(kKernelWidth):
+# 				for j in range(kKernelHeight):
+# 					# 주의 : numpy.float64 is JSON serializable but numpy.float32 is not
+# 					value = np.float64(filters[f][d][i][j])
+# 					valMax = max(valMax, value);
+# 					valMin = min(valMin, value);
+#
+# 					rowIdx = int(f / maxColNum);
+# 					colIdx = f - rowIdx * maxColNum;
+#
+# 					xPos = colIdx * kKernelWidth + i;
+# 					yPos = rowIdx * kKernelHeight + j;
+# 					dataInDepth[d][iter] = [xPos, yPos,0, value]
+# 					iter += 1
+#
+# 	return (dataInDepth, valMin, valMax)
 
 
 def getActivations(uri,image_path,kBoxWidth,kBoxHeight,kRowSpace,kColSpace):
@@ -394,9 +423,9 @@ def getActivations(uri,image_path,kBoxWidth,kBoxHeight,kRowSpace,kColSpace):
 def cvtActvationsToEchartCoord(activation, kWidth,kHeight,kFilterNum , maxColNum):
 	valMin = np.finfo(np.float32).max;
 	valMax = -valMin;
-	
+
 	dataInDepth= np.zeros((1,kFilterNum * kWidth * kHeight, 3))
-	
+
 	iter = 0
 	for f in range(kFilterNum):
 		for i in range(kWidth):
@@ -405,16 +434,44 @@ def cvtActvationsToEchartCoord(activation, kWidth,kHeight,kFilterNum , maxColNum
 				value = np.float64(activation[f][i][j])
 				valMax = max(valMax, value);
 				valMin = min(valMin, value);
-				
+
 				rowIdx = int(f / maxColNum);
 				colIdx = f - rowIdx * maxColNum;
-				
+
 				xPos = colIdx * kWidth + i;
 				yPos = rowIdx * kHeight + j;
-				dataInDepth[0][iter] = [xPos, yPos, value]
+				dataInDepth[0][iter] = [xPos,yPos, value]
 				iter +=1
-	
+
 	return (dataInDepth, valMin, valMax)
+
+
+# # 3D
+# @njit(fastmath=True)
+# def cvtActvationsToEchartCoord(activation, kWidth, kHeight, kFilterNum, maxColNum):
+# 	valMin = np.finfo(np.float32).max;
+# 	valMax = -valMin;
+#
+# 	dataInDepth = np.zeros((1, kFilterNum * kWidth * kHeight, 4))
+#
+# 	iter = 0
+# 	for f in range(kFilterNum):
+# 		for i in range(kWidth):
+# 			for j in range(kHeight):
+# 				# 주의 : numpy.float64 is JSON serializable but numpy.float32 is not
+# 				value = np.float64(activation[f][i][j])
+# 				valMax = max(valMax, value);
+# 				valMin = min(valMin, value);
+#
+# 				rowIdx = int(f / maxColNum);
+# 				colIdx = f - rowIdx * maxColNum;
+#
+# 				xPos = colIdx * kWidth + i;
+# 				yPos = rowIdx * kHeight + j;
+# 				dataInDepth[0][iter] = [xPos, yPos, 0, value]
+# 				iter += 1
+#
+# 	return (dataInDepth, valMin, valMax)
 
 # if this is the main thread of execution first load the model and
 # then start the server
