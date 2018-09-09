@@ -18,6 +18,8 @@ MODELS = {
 # 	MODELS['BasicConvnet']: kBasicConvNetAddr,
 # 	MODELS['MobileNet']: kMobileNetAddr
 # }
+FILTER_VISUAL_MODE= {"Image":0, "Heatmap":1, "Bar3d":2}
+
 modelIdToAddr= {
 	MODELS['ResNet50']: kMobileNetAddr,
 	MODELS['InceptionV3']: kInceptionNetAddr,

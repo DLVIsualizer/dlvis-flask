@@ -41,5 +41,6 @@ def predict():
 
 if __name__ == "__main__":
 	print(("RelayServer Starting.."))
-	app.debug = True
+	# app.debug = True
 	app.run()
+	print("------Server End----------------")

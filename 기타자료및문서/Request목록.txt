@@ -1,0 +1,17 @@
+
+
+layer조회
+http://127.0.0.1:5000/layers/0
+
+filter조회 - 이미지
+http://127.0.0.1:5000/layer_data/?model_id=0&layer_name=conv1&layer_type=Conv2D&visual_mode=0&image_path=undefined&box_width=500&box_height=500&row_space=20&col_space=20
+
+filter조회 - 이미지 뎁스
+http://127.0.0.1:5000/layer_data/?model_id=0&layer_name=conv1&layer_type=Conv2D&visual_mode=0&visual_depth=1&image_path=undefined&box_width=500&box_height=500&row_space=20&col_space=20
+
+Activation조회 - 이미지
+http://127.0.0.1:5000/layer_data/?model_id=0&layer_name=conv1_relu&layer_type=Activation&visual_mode=0&image_path=undefined&box_width=500&box_height=500&row_space=20&col_space=20
+
+
+Activation조회 - 히트맵
+http://127.0.0.1:5000/layer_data/?model_id=0&layer_name=conv1_relu&layer_type=Activation&visual_mode=1&image_path=undefined&box_width=500&box_height=500&row_space=20&col_space=20

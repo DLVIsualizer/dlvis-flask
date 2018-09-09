@@ -14,6 +14,8 @@ from collections import namedtuple
 import stream_to_logger as LOGGER
 import math
 import sys
+import cv2
+import base64
 from numba import jit, njit
 
 # initialize our Flask application and the Keras model
@@ -36,7 +38,6 @@ mobileNetModel = MobileNet(weights="imagenet")
 dlvMobile = dlv.Model(mobileNetModel)
 dlvMobile.addInputData('dog.jpg')
 dlvMobile.getFeaturesFromFetchedList()
-
 
 
 def prepare_image(image, target):
@@ -184,7 +185,7 @@ def create_model_graph(layers):
 
 @app.route("/layers/<int:model_id>", methods=["GET"])
 @cross_origin(expose_headers=allowableHeader)
-def layers(model_id):
+def routeLayers(model_id):
 	jmodel = json.loads(mobileNetModel.to_json())
 	
 	layers = jmodel["config"]["layers"]
@@ -193,19 +194,19 @@ def layers(model_id):
 	model_graph = create_model_graph(layers)
 	# print(json.dumps(model_graph, indent=2, sort_keys=True))
 	res = flask.jsonify(model_graph)
-
 	
 	return res
 
 
 @app.route("/layer_data/", methods=["GET"])
 @cross_origin(expose_headers=allowableHeader)
-def layerData():
+def routeLayerData():
 	uri = flask.request.url.partition('LayerData/')[2]
 	
 	model_id = int(flask.request.args.get('model_id'))
 	layer_name = flask.request.args.get('layer_name')
 	layer_type = flask.request.args.get('layer_type')
+	visual_mode = int(flask.request.args.get('visual_mode'))
 	image_path = flask.request.args.get('image_path')
 	kBoxWidth = int(flask.request.args.get('box_width'))
 	kBoxHeight = int(flask.request.args.get('box_height'))
@@ -213,9 +214,9 @@ def layerData():
 	kColSpace = int(flask.request.args.get('col_space'))
 	
 	if layer_type == 'Conv2D':
-		return filtersInLayer3D(uri, kBoxWidth, kBoxHeight, kRowSpace, kColSpace)
+		return routeFiltersInLayer(uri,model_id,layer_name, visual_mode, kBoxWidth, kBoxHeight, kRowSpace, kColSpace)
 	elif layer_type == 'Activation':
-		return activations(uri, image_path, kBoxWidth, kBoxHeight, kRowSpace, kColSpace)
+		return routeActivations(uri,model_id,layer_name, visual_mode, image_path, kBoxWidth, kBoxHeight, kRowSpace, kColSpace)
 	else:
 		LOGGER.any.Log(sys._getframe(), "Wrong layerType")
 
@@ -224,73 +225,167 @@ def layerData():
 # 먼저 [filter수,inlayerNum,커널x,커널y]로 바꿈
 # 그 후
 # [inlayerNum,[커널x,커널y,value]]로 바꿈
-def filtersInLayer3D(uri, kBoxWidth, kBoxHeight, kRowSpace, kColSpace):
-	uri = flask.request.url.partition('filters/')[2]
-	LOGGER.fl.startFunction(sys._getframe())
-	
-	model_id = int(flask.request.args.get('model_id'))
-	layer_name = flask.request.args.get('layer_name')
+def routeFiltersInLayer(uri,model_id,layer_name, visual_mode, kBoxWidth, kBoxHeight, kRowSpace, kColSpace):
 	
 	# weight이 있는 레이어의 경우만 결과 리턴
 	weights = dlvMobile._k_model.get_layer(layer_name).get_weights()
 	if len(weights) > 0:
-		# dtype : float32
-		filters = weights[0]
-		
-		kKernelWidth = int(len(filters))
-		kKernelHeight = int(len(filters[0]))
-		kDepthNum = int(len(filters[0][0]))
-		kFilterNum = int(len(filters[0][0][0]))
-		kKernelArea = kKernelWidth * kKernelHeight
-		
-		# 필터 [커널x,커널y,inlayerNum,filter수] 에서
-		# 먼저 [filter수,inlayerNum,커널x,커널y]로 바꿈
-		filters = np.moveaxis(filters, -1, 0)
-		filters = np.moveaxis(filters, -1, 1)
-		
-		# 여러개의 필터를 한 heatmap에 표시하기 위한 좌표 계산
-		kBoxValidArea = (kBoxWidth - kRowSpace) * (kBoxHeight - kColSpace);
-		kFilterWidth = int(math.sqrt(kBoxValidArea / kFilterNum));
-		kFilterHeight = kFilterWidth;
-		maxColNum = int((kBoxWidth - kRowSpace) / kFilterWidth);
-		maxRowNum = int((kFilterNum - 1) / maxColNum) + 1;
-		
-		cvtRet = cvtFiltersToEchartCoord(filters, kDepthNum, kFilterNum, kKernelWidth, kKernelHeight, maxColNum)
-		
-		dataInDepth = cvtRet[0]
-		valMin = cvtRet[1]
-		valMax = cvtRet[2]
-		
-		res = flask.Response(
-			response=dataInDepth.tobytes(),
-			status=200,
-			# mimetype='application/octet-stream',
-			mimetype='stream',
-			headers={
-				'filterNum': kFilterNum,
-				'depthNum': kDepthNum,
-				'vwidth': kKernelWidth,
-				'vheight': kKernelHeight,
-				'valMin': valMin,
-				'valMax': valMax
-			}
-		)
-		
-		length = res.content_length
-		
-		LOGGER.fl.endFunction(sys._getframe(), uri + '  len: ' + str(length))
-		return res
+		if (visual_mode == FILTER_VISUAL_MODE['Image']):
+			return responseFiltersByImg(uri, weights, kBoxWidth, kBoxHeight, kRowSpace, kColSpace)
+		else:
+			return responseFiltersByEchartCoord(uri, weights, kBoxWidth, kBoxHeight, kRowSpace, kColSpace)
 	else:
 		# weight이 없는경우
 		#  TODO
 		return ('', 204)  # No Content
 
 
+def responseFiltersByImg(uri, weights, kBoxWidth, kBoxHeight, kRowSpace, kColSpace):
+	visual_depth = 0
+	try:
+		visual_depth= int(flask.request.args.get('visual_depth'))
+	except:
+		visual_depth = 0
+	
+	# dtype : float32
+	filters = weights[0]
+	
+	kKernelWidth = int(len(filters))
+	kKernelHeight = int(len(filters[0]))
+	kDepthNum = int(len(filters[0][0]))
+	kFilterNum = int(len(filters[0][0][0]))
+	kKernelArea = kKernelWidth * kKernelHeight
+	
+	# 필터 [커널x,커널y,inlayerNum,filter수] 에서
+	# 먼저 [filter수,inlayerNum,커널x,커널y]로 바꿈
+	filters = np.moveaxis(filters, -1, 0)
+	filters = np.moveaxis(filters, -1, 1)
+	
+	# 여러개의 필터를 한 heatmap에 표시하기 위한 좌표 계산
+	kBoxValidArea = (kBoxWidth - kRowSpace) * (kBoxHeight - kColSpace);
+	kFilterWidth = int(math.sqrt(kBoxValidArea / kFilterNum));
+	kFilterHeight = kFilterWidth;
+	maxColNum = int((kBoxWidth - kRowSpace) / kFilterWidth);
+	maxRowNum = int((kFilterNum - 1) / maxColNum) + 1;
+	
+	cvtRet = convertFiltersToImg(visual_depth,filters, kDepthNum, kFilterNum, kKernelWidth, kKernelHeight, maxColNum)
+	
+	data= cvtRet[0][0]
+	valMin = cvtRet[1]
+	valMax = cvtRet[2]
+	
+	data = cv2.normalize(data, None, 0, 255, cv2.NORM_MINMAX)
+	zoomNp = data
+	zoomNp = zoomNp.repeat(10, axis=0).repeat(10, axis=1)
+	dataRet = cv2.imencode('.jpg', zoomNp)[1].tobytes()
+	
+	# test = np.random.rand(500, 300)
+	# test = cv2.normalize(test, None, 0, 255, cv2.NORM_MINMAX)
+	# test = cv2.imencode('.jpg', test)[1].tobytes()
+	
+	res = flask.Response(
+		response=dataRet,
+		# response=test,
+		status=200,
+		mimetype='image/jpg',
+		headers={
+			'filterNum': kFilterNum,
+			'depthNum': kDepthNum,
+			'vwidth': kKernelWidth,
+			'vheight': kKernelHeight,
+			'valMin': valMin,
+			'valMax': valMax
+		}
+	)
+	
+	length = res.content_length
+	
+	return res
+
+
+def responseFiltersByEchartCoord(uri, weights, kBoxWidth, kBoxHeight, kRowSpace, kColSpace):
+	# dtype : float32
+	filters = weights[0]
+	
+	kKernelWidth = int(len(filters))
+	kKernelHeight = int(len(filters[0]))
+	kDepthNum = int(len(filters[0][0]))
+	kFilterNum = int(len(filters[0][0][0]))
+	kKernelArea = kKernelWidth * kKernelHeight
+	
+	# 필터 [커널x,커널y,inlayerNum,filter수] 에서
+	# 먼저 [filter수,inlayerNum,커널x,커널y]로 바꿈
+	filters = np.moveaxis(filters, -1, 0)
+	filters = np.moveaxis(filters, -1, 1)
+	
+	# 여러개의 필터를 한 heatmap에 표시하기 위한 좌표 계산
+	kBoxValidArea = (kBoxWidth - kRowSpace) * (kBoxHeight - kColSpace);
+	kFilterWidth = int(math.sqrt(kBoxValidArea / kFilterNum));
+	kFilterHeight = kFilterWidth;
+	maxColNum = int((kBoxWidth - kRowSpace) / kFilterWidth);
+	maxRowNum = int((kFilterNum - 1) / maxColNum) + 1;
+	
+	cvtRet = convertFiltersToEchartCoord(filters, kDepthNum, kFilterNum, kKernelWidth, kKernelHeight, maxColNum)
+	
+	dataInDepth = cvtRet[0]
+	valMin = cvtRet[1]
+	valMax = cvtRet[2]
+	
+	res = flask.Response(
+		response=dataInDepth.tobytes(),
+		status=200,
+		mimetype='stream',
+		headers={
+			'filterNum': kFilterNum,
+			'depthNum': kDepthNum,
+			'vwidth': kKernelWidth,
+			'vheight': kKernelHeight,
+			'valMin': valMin,
+			'valMax': valMax
+		}
+	)
+	
+	length = res.content_length
+	
+	return res
+
+
 # # Helper function
-# # def filtersInLayer3D(uri,model_id, layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSpace):
+# # def filtersInLayer(uri,model_id, layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSpace):
 # # 위 메소드에서 호출
 @njit(fastmath=True)
-def cvtFiltersToEchartCoord(filters, kDepthNum, kFilterNum, kKernelWidth, kKernelHeight, maxColNum):
+def convertFiltersToImg(visual_depth,filters, kDepthNum, kFilterNum, kKernelWidth, kKernelHeight, maxColNum):
+	valMin = np.finfo(np.float32).max;
+	valMax = -valMin;
+	
+	maxRowNum = int((kFilterNum - 1) / maxColNum) + 1;
+	dataInDepth = np.zeros((1, maxRowNum * kKernelHeight, maxColNum * kKernelWidth))
+	yOneLine = maxColNum * kKernelWidth
+	
+	for f in range(kFilterNum):
+		for i in range(kKernelWidth):
+			for j in range(kKernelHeight):
+				# 주의 : numpy.float64 is JSON serializable but numpy.float32 is not
+				value = np.float64(filters[f][visual_depth][i][j])
+				valMax = max(valMax, value);
+				valMin = min(valMin, value);
+				
+				rowIdx = int(f / maxColNum);
+				colIdx = f - rowIdx * maxColNum;
+				
+				xPos = colIdx * kKernelWidth + i;
+				yPos = rowIdx * kKernelHeight + j;
+				
+				dataInDepth[0][yPos][xPos] = value;
+	
+	return (dataInDepth, valMin, valMax)
+
+
+# # Helper function
+# # def filtersInLayer(uri,model_id, layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSpace):
+# # 위 메소드에서 호출
+@njit(fastmath=True)
+def convertFiltersToEchartCoord(filters, kDepthNum, kFilterNum, kKernelWidth, kKernelHeight, maxColNum):
 	valMin = np.finfo(np.float32).max;
 	valMax = -valMin;
 	
@@ -317,55 +412,14 @@ def cvtFiltersToEchartCoord(filters, kDepthNum, kFilterNum, kKernelWidth, kKerne
 	return (dataInDepth, valMin, valMax)
 
 
-def activations(uri, image_path, kBoxWidth, kBoxHeight, kRowSpace, kColSpace):
-	uri = flask.request.url.partition('activations/')[2]
-	LOGGER.fl.startFunction(sys._getframe())
-	
-	model_id = int(flask.request.args.get('model_id'))
-	layer_name = flask.request.args.get('layer_name')
+def routeActivations(uri,model_id,layer_name, visual_mode, image_path, kBoxWidth, kBoxHeight, kRowSpace, kColSpace):
 	
 	# Activation있는 레이어의 경우만 결과 리턴
-	if mobileNetModel._indata_FeatureMap_Dict['dog.jpg'] != None:
-		targetLayerIdx = mobileNetModel._fetchedTensorNameToIdxMap[layer_name]
-		activationResult = mobileNetModel._indata_FeatureMap_Dict['dog.jpg']._featureMapList[targetLayerIdx]
-		
-		kWidth = len(activationResult)
-		kHeight = len(activationResult[0])
-		kFilterNum = len(activationResult[0][0])
-		
-		# 필터 [witdh,height,filter수] 에서
-		#  [filter수,witdh,height]로 바꿈
-		activationResult = np.moveaxis(activationResult, -1, 0)
-		
-		# 여러개의 Activation를 한 heatmap에 표시하기 위한 좌표 계산
-		kBoxValidArea = (kBoxWidth - kRowSpace) * (kBoxHeight - kColSpace);
-		kFilterWidth = int(math.sqrt(kBoxValidArea / kFilterNum));
-		kFilterHeight = kFilterWidth;
-		maxColNum = int((kBoxWidth - kRowSpace) / kFilterWidth);
-		maxRowNum = int((kFilterNum - 1) / maxColNum) + 1;
-		
-		cvtRet = cvtActvationsToEchartCoord(activationResult, kWidth, kHeight, kFilterNum, maxColNum)
-		
-		data = cvtRet[0]
-		valMin = cvtRet[1]
-		valMax = cvtRet[2]
-		
-		res = flask.Response(
-			response=data.tobytes(),
-			status=200,
-			# mimetype='application/octet-stream',
-			mimetype='stream',
-			headers={
-				'filterNum': kFilterNum,
-				'depthNum': 1,
-				'vwidth': kWidth,
-				'vheight': kHeight,
-				'valMin': valMin,
-				'valMax': valMax
-			}
-		)
-		
-		return res
+	if dlvMobile._indata_FeatureMap_Dict['dog.jpg'] != None:
+		if (visual_mode == FILTER_VISUAL_MODE['Image']):
+			return responseActvationsByImg(layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSpace)
+		else:
+			return responseActvationsByEchartCoord(layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSpace)
 	
 	# Activation이 없을 경우
 	else:
@@ -373,11 +427,129 @@ def activations(uri, image_path, kBoxWidth, kBoxHeight, kRowSpace, kColSpace):
 		return ('', 204)  # No Content
 
 
+def responseActvationsByImg(layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSpace):
+	targetLayerIdx = dlvMobile._fetchedTensorNameToIdxMap[layer_name]
+	activationResult = dlvMobile._indata_FeatureMap_Dict['dog.jpg']._featureMapList[targetLayerIdx]
+	
+	kWidth = len(activationResult)
+	kHeight = len(activationResult[0])
+	kFilterNum = len(activationResult[0][0])
+	
+	# 필터 [witdh,height,filter수] 에서
+	#  [filter수,witdh,height]로 바꿈
+	activationResult = np.moveaxis(activationResult, -1, 0)
+	
+	# 여러개의 Activation를 한 heatmap에 표시하기 위한 좌표 계산
+	kBoxValidArea = (kBoxWidth - kRowSpace) * (kBoxHeight - kColSpace);
+	kFilterWidth = int(math.sqrt(kBoxValidArea / kFilterNum));
+	kFilterHeight = kFilterWidth;
+	maxColNum = int((kBoxWidth - kRowSpace) / kFilterWidth);
+	maxRowNum = int((kFilterNum - 1) / maxColNum) + 1;
+	
+	cvtRet = convertActvationsToImg(activationResult, kWidth, kHeight, kFilterNum, maxColNum)
+	
+	data = cvtRet[0][0]
+	valMin = cvtRet[1]
+	valMax = cvtRet[2]
+	
+	data = cv2.normalize(data, None, 0, 255, cv2.NORM_MINMAX)
+	zoomNp = data
+	zoomNp = zoomNp.repeat(2, axis=0).repeat(2, axis=1)
+	dataRet = cv2.imencode('.jpg', zoomNp)[1].tobytes()
+	
+	res = flask.Response(
+		response=dataRet,
+		status=200,
+		mimetype='image/jpg',
+		headers={
+			'filterNum': kFilterNum,
+			'depthNum': 1,
+			'vwidth': kWidth,
+			'vheight': kHeight,
+			'valMin': valMin,
+			'valMax': valMax
+		}
+	)
+	
+	return res
+
+
+def responseActvationsByEchartCoord(layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSpace):
+	targetLayerIdx = dlvMobile._fetchedTensorNameToIdxMap[layer_name]
+	activationResult = dlvMobile._indata_FeatureMap_Dict['dog.jpg']._featureMapList[targetLayerIdx]
+	
+	kWidth = len(activationResult)
+	kHeight = len(activationResult[0])
+	kFilterNum = len(activationResult[0][0])
+	
+	# 필터 [witdh,height,filter수] 에서
+	#  [filter수,witdh,height]로 바꿈
+	activationResult = np.moveaxis(activationResult, -1, 0)
+	
+	# 여러개의 Activation를 한 heatmap에 표시하기 위한 좌표 계산
+	kBoxValidArea = (kBoxWidth - kRowSpace) * (kBoxHeight - kColSpace);
+	kFilterWidth = int(math.sqrt(kBoxValidArea / kFilterNum));
+	kFilterHeight = kFilterWidth;
+	maxColNum = int((kBoxWidth - kRowSpace) / kFilterWidth);
+	maxRowNum = int((kFilterNum - 1) / maxColNum) + 1;
+	
+	cvtRet = convertActvationsToEchartCoord(activationResult, kWidth, kHeight, kFilterNum, maxColNum)
+	
+	data = cvtRet[0]
+	valMin = cvtRet[1]
+	valMax = cvtRet[2]
+
+	res = flask.Response(
+		response=data.tobytes(),
+		status=200,
+		mimetype='stream',
+		headers={
+			'filterNum': kFilterNum,
+			'depthNum': 1,
+			'vwidth': kWidth,
+			'vheight': kHeight,
+			'valMin': valMin,
+			'valMax': valMax
+		}
+	)
+	
+	return res
+
+
+# # Helper function
+# # def filtersInLayer(uri,model_id, layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSpace):
+# # 위 메소드에서 호출
+@njit(fastmath=True)
+def convertActvationsToImg(activation, kWidth, kHeight, kFilterNum, maxColNum):
+	valMin = np.finfo(np.float32).max;
+	valMax = -valMin;
+	
+	maxRowNum = int((kFilterNum - 1) / maxColNum) + 1;
+	dataInDepth = np.zeros((1, maxRowNum * kHeight, maxColNum * kWidth))
+	
+	for f in range(kFilterNum):
+		for i in range(kWidth):
+			for j in range(kHeight):
+				# 주의 : numpy.float64 is JSON serializable but numpy.float32 is not
+				value = np.float64(activation[f][i][j])
+				valMax = max(valMax, value);
+				valMin = min(valMin, value);
+				
+				rowIdx = int(f / maxColNum);
+				colIdx = f - rowIdx * maxColNum;
+				
+				xPos = colIdx * kWidth + i;
+				yPos = rowIdx * kHeight + j;
+				dataInDepth[0][yPos][xPos] = value;
+	
+	return (dataInDepth, valMin, valMax)
+
+
 # Helper function
 # def getActivations(uri,image_path):
 # 위 메소드에서 호출
 @njit(fastmath=True)
-def cvtActvationsToEchartCoord(activation, kWidth, kHeight, kFilterNum, maxColNum):
+def convertActvationsToEchartCoord(activation, kWidth, kHeight, kFilterNum, maxColNum):
 	valMin = np.finfo(np.float32).max;
 	valMax = -valMin;
 	
@@ -448,9 +620,9 @@ def predict():
 if __name__ == '__main__':
 	print(("* Loading Keras model and Flask starting server..."
 	       "please wait until server has fully started"))
-	app.debug = True
+	# app.debug = True
 	app.run(port=6003)
-	print("------Server Started----------------")
+	print("------Server End----------------")
 
 ####################################################################
 #############################Deprecated############################

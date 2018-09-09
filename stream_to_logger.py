@@ -101,26 +101,18 @@ class AnyDataLogger(object):
 		self.log_level = log_level
 		self.linebuf = ''
 		self.functionMaps = {}
-		self.functionLineMaps = {}
 	
 	# logger write redirection
 	def write(self, buf):
 		for line in buf.rstrip().splitlines():
 			self.logger.log(self.log_level, line.rstrip())
 	
-	def startLine(self, frame):
-		if self.isDebugging():
-			self.functionLineMaps[frame.f_code.co_name] = (frame.f_lineno, time.perf_counter())
-		else:
-			pass
-	
+
 	def Log(self, frame, additional=""):
 		if self.isDebugging():
-			startLine = self.functionLineMaps[frame.f_code.co_name][0]
 			self.logger.debug("%25s %25s (line:%s): %s" %
 			                  (ntpath.basename(frame.f_code.co_filename),
 			                   frame.f_code.co_name,
-			                   startLine,
 			                   frame.f_lineno,
 			                   additional))
 		else:
