@@ -93,7 +93,7 @@ class Model:
 		:param imgPath:
 		:return:
 		"""
-		curDirPath = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+		curDirPath = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))) +'/../'
 		img_path = curDirPath + imgPath
 		img = image.load_img(img_path, target_size=(224, 224))
 		x = image.img_to_array(img)
