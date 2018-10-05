@@ -4,37 +4,49 @@ from constants import *
 import flask
 import requests
 
+
 # initialize our Flask application and the Keras model
 app = flask.Flask(__name__)
 
 @app.route("/layers/<int:model_id>", methods=["GET"])
-@cross_origin(origin='*')
+@cross_origin()
 def layers(model_id):
-	dest = modelIdToAddr[model_id] + '/layers/%d' % model_id
-	reqRet = requests.get(dest)
-	res = flask.Response(
-		response=reqRet.content,
-		status=reqRet.status_code,
-		headers=reqRet.headers.items(),
-	)
-	# res.headers._list += [('Access-Control-Allow-Origin','*')]
-	res.headers._list += [('Access-Control-Allow-Methods',"*")]
-	res.headers._list += [('Access-Control-Allow-Headers',"*")]
-	return res
-	# return (reqRet.content, reqRet.status_code, reqRet.headers.items())
+        dest = modelIdToAddr[model_id] + '/layers/%d' % model_id
+        reqRet = requests.get(dest)
+        res = flask.Response(
+                response=reqRet.content,
+                status=reqRet.status_code,
+                headers=reqRet.headers.items(),
+        )
+        #res.headers.set('Access-Control-Allow-Origin',"*")
+        res.headers.remove('Access-Control-Allow-Origin')
+        res.headers._list += [('Access-Control-Allow-Methods',"*")]
+        res.headers._list += [('Access-Control-Allow-Headers',"*")]
+        return res
+        # return (reqRet.content, reqRet.status_code, reqRet.headers.items())
 
 
 @app.route("/layer_data/", methods=["GET"])
-@cross_origin(origin='*')
+@cross_origin()
 def layerData():
-	uri = flask.request.url.partition('layer_data/')[2]
-	
-	model_id = int(flask.request.args.get('model_id'))
-	dest = modelIdToAddr[model_id] + '/layer_data/'
-	dest += uri
-	
-	reqRet = requests.get(dest)
-	return (reqRet.content, reqRet.status_code, reqRet.headers.items())
+        uri = flask.request.url.partition('layer_data/')[2]
+
+        model_id = int(flask.request.args.get('model_id'))
+        dest = modelIdToAddr[model_id] + '/layer_data/'
+        dest += uri
+
+        reqRet = requests.get(dest)
+
+        res = flask.Response(
+                response=reqRet.content,
+                status=reqRet.status_code,
+                headers=reqRet.headers.items(),
+        )
+        #res.headers.set('Access-Control-Allow-Origin',"*")
+        res.headers.remove('Access-Control-Allow-Origin')
+        res.headers._list += [('Access-Control-Allow-Methods',"*")]
+        res.headers._list += [('Access-Control-Allow-Headers',"*")]
+        return res
 
 
 @app.route("/predict", methods=["POST"])
@@ -46,5 +58,5 @@ def predict():
 if __name__ == "__main__":
 	print(("RelayServer Starting.."))
 	# app.debug = True
-	app.run()
+	app.run(host='0.0.0.0',port=33333)
 	print("------Server End----------------")
