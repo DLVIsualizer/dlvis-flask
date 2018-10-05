@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-kMODELSERVER_ADDR= 'http://127.0.0.1:4999'
-kResNetAddr= 'http://127.0.0.1:6000'
-kInceptionNetAddr= 'http://127.0.0.1:6001'
-kBasicConvNetAddr= 'http://127.0.0.1:6002'
-kMobileNetAddr= 'http://127.0.0.1:6003'
+kResNetAddr= 'http://10.0.0.4:6000'
+kInceptionNetAddr= 'http://10.0.0.4:6001'
+kBasicConvNetAddr= 'http://10.0.0.4:6002'
+kMobileNetAddr= 'http://10.0.0.4:6003'
 
 MODELS = {
     'ResNet50': 0,
