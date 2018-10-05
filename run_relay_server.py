@@ -8,6 +8,7 @@ import requests
 app = flask.Flask(__name__)
 
 @app.route("/layers/<int:model_id>", methods=["GET"])
+@cross_origin(origin='*')
 def layers(model_id):
 	dest = modelIdToAddr[model_id] + '/layers/%d' % model_id
 	reqRet = requests.get(dest)
@@ -24,6 +25,7 @@ def layers(model_id):
 
 
 @app.route("/layer_data/", methods=["GET"])
+@cross_origin(origin='*')
 def layerData():
 	uri = flask.request.url.partition('layer_data/')[2]
 	
@@ -36,6 +38,7 @@ def layerData():
 
 
 @app.route("/predict", methods=["POST"])
+@cross_origin(origin='*')
 def predict():
 	return ('', 204)  # No Content
 
