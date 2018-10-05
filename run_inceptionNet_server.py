@@ -35,8 +35,8 @@ allowableHeader = [
 # cors = CORS(app, automatic_options=True)
 # cors = CORS(app, expose_headers=allowableHeader)
 
-mobileNetModel = MobileNet(weights="imagenet")
-dlvMobile = dlv.Model(mobileNetModel)
+inceptionModel = InceptionV3(weights="imagenet")
+dlvMobile = dlv.Model(inceptionModel)
 dlvMobile.addInputData('dog.jpg')
 dlvMobile.getFeaturesFromFetchedList()
 
@@ -187,7 +187,7 @@ def create_model_graph(layers):
 @app.route("/layers/<int:model_id>", methods=["GET"])
 @cross_origin(expose_headers=allowableHeader)
 def routeLayers(model_id):
-	jmodel = json.loads(mobileNetModel.to_json())
+	jmodel = json.loads(inceptionModel.to_json())
 	
 	layers = jmodel["config"]["layers"]
 	
@@ -622,7 +622,7 @@ if __name__ == '__main__':
 	print(("* Loading Keras model and Flask starting server..."
 	       "please wait until server has fully started"))
 	# app.debug = True
-	app.run(port=6003)
+	app.run(port=6001)
 	print("------Server End----------------")
 
 ####################################################################
