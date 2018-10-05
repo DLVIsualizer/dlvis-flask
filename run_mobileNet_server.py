@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # import the necessary packages
 from flask_cors import CORS, cross_origin
 from constants import *
@@ -34,7 +35,7 @@ allowableHeader = [
 # cors = CORS(app, automatic_options=True)
 # cors = CORS(app, expose_headers=allowableHeader)
 
-mobileNetModel = MobileNet(weights="imagenet")
+mobileNetModel = ResNet50(weights="imagenet")
 dlvMobile = dlv.Model(mobileNetModel)
 dlvMobile.addInputData('dog.jpg')
 dlvMobile.getFeaturesFromFetchedList()

@@ -1,0 +1,38 @@
+//////////////////////[RelayServer]//////////////
+-----------Front-end service---------------------
+sudo vi /lib/systemd/system/front_end.service
+
+[Unit]
+Description=Yarn Front-end
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+User=Park
+PermissionsStartOnly=true
+ExecStart=/home/Park/dlvis-react/yarn start
+TimeoutSec=600
+Restart=on-failure
+RuntimeDirectoryMode=755
+
+52.231.65.230:3000
+
+-----------Relay Flask service-------------------
+sudo vi /lib/systemd/system/flask.service
+
+[Unit]
+Description=Flask web server
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+User=Park
+PermissionsStartOnly=true
+ExecStart=/usr/bin/python /home/Park/dlvis-flask/run_relay_server.py
+TimeoutSec=600
+Restart=on-failure
+RuntimeDirectoryMode=755
+
+52.231.65.230:5000

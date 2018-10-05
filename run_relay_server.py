@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from flask_cors import CORS, cross_origin
 from constants import *
 import flask
