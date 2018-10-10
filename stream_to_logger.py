@@ -90,8 +90,9 @@ funcionLog.setLevel(logging.DEBUG)
 
 formatter = logging.Formatter('%(asctime)s/%(levelname)s::%(message)s')
 
-filepath = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))+'/'
-file_handler = logging.FileHandler(filepath+'profileFunction.log')
+# filepath = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))+'/'
+# file_handler = logging.FileHandler(filepath+'profileFunction.log')
+file_handler = logging.FileHandler('profileFunction.log')
 file_handler.setFormatter(formatter)
 funcionLog.addHandler(file_handler)
 
@@ -130,7 +131,8 @@ anyDataLog.setLevel(logging.DEBUG)
 
 anyDataformatter = logging.Formatter('%(asctime)s/%(levelname)s::%(message)s')
 
-anyDataFile_handler = logging.FileHandler(filepath+'anyData.log')
+# anyDataFile_handler = logging.FileHandler(filepath+'anyData.log')
+anyDataFile_handler = logging.FileHandler('anyData.log')
 anyDataFile_handler.setFormatter(anyDataformatter)
 anyDataLog.addHandler(anyDataFile_handler)
 

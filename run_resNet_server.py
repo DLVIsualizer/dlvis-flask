@@ -213,7 +213,7 @@ def routeLayerData():
 	layer_name = flask.request.args.get('layer_name')
 	layer_type = flask.request.args.get('layer_type')
 	visual_mode = int(flask.request.args.get('visual_mode'))
-	image_path = flask.request.args.get('image_path')
+	image_path = int(flask.request.args.get('image_path'))
 	kBoxWidth = int(flask.request.args.get('box_width'))
 	kBoxHeight = int(flask.request.args.get('box_height'))
 	kRowSpace = int(flask.request.args.get('row_space'))
