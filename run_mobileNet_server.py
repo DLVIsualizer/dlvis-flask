@@ -38,6 +38,11 @@ allowableHeader = [
 mobileNetModel = MobileNet(weights="imagenet")
 dlvMobile = dlv.Model(mobileNetModel)
 dlvMobile.addInputData('dog.jpg')
+dlvMobile.addInputData('dog2.jpg')
+dlvMobile.addInputData('dog3.jpg')
+dlvMobile.addInputData('cat1.jpg')
+dlvMobile.addInputData('cat2.jpg')
+dlvMobile.addInputData('cat3.jpg')
 dlvMobile.getFeaturesFromFetchedList()
 
 
