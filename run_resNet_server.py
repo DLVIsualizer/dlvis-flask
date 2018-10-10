@@ -208,7 +208,8 @@ def routeLayers(model_id):
 @cross_origin(expose_headers=allowableHeader)
 def routeLayerData():
 	uri = flask.request.url.partition('LayerData/')[2]
-	
+	LOGGER.any.Log(sys._getframe(), uri)
+
 	model_id = int(flask.request.args.get('model_id'))
 	layer_name = flask.request.args.get('layer_name')
 	layer_type = flask.request.args.get('layer_type')
