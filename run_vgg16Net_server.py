@@ -2,9 +2,7 @@
 # import the necessary packages
 from flask_cors import CORS, cross_origin
 from constants import *
-from keras.applications import ResNet50
-from keras.applications import MobileNet
-from keras.applications import InceptionV3
+from keras.applications import VGG16
 from keras.applications import imagenet_utils
 from keras.preprocessing.image import img_to_array
 import dlv
@@ -35,8 +33,8 @@ allowableHeader = [
 # cors = CORS(app, automatic_options=True)
 # cors = CORS(app, expose_headers=allowableHeader)
 
-mobileNetModel = MobileNet(weights="imagenet")
-dlvMobile = dlv.Model(mobileNetModel)
+vgg16Model = VGG16(weights="imagenet")
+dlvMobile = dlv.Model(vgg16Model)
 dlvMobile.addInputData('dog.jpg')
 dlvMobile.addInputData('dog2.jpg')
 dlvMobile.addInputData('dog3.jpg')
@@ -192,7 +190,7 @@ def create_model_graph(layers):
 @app.route("/layers/<int:model_id>", methods=["GET"])
 @cross_origin(expose_headers=allowableHeader)
 def routeLayers(model_id):
-	jmodel = json.loads(mobileNetModel.to_json())
+	jmodel = json.loads(vgg16Model.to_json())
 	
 	layers = jmodel["config"]["layers"]
 	
@@ -627,7 +625,7 @@ if __name__ == '__main__':
 	print(("* Loading Keras model and Flask starting server..."
 	       "please wait until server has fully started"))
 	# app.debug = True
-	app.run(host='0.0.0.0',port=6003)
+	app.run(host='0.0.0.0',port=6002)
 	print("------Server End----------------")
 
 ####################################################################

@@ -35,9 +35,9 @@ allowableHeader = [
 # cors = CORS(app, automatic_options=True)
 # cors = CORS(app, expose_headers=allowableHeader)
 
-mobileNetModel = MobileNet(weights="imagenet")
-dlvMobile = dlv.Model(mobileNetModel)
-dlvMobile.addInputData('dog.jpg')
+resnetModel = ResNet50(weights="imagenet")
+dlvMobile = dlv.Model(resnetModel)
+dlvMobile.addInputData('dog1.jpg')
 dlvMobile.addInputData('dog2.jpg')
 dlvMobile.addInputData('dog3.jpg')
 dlvMobile.addInputData('cat1.jpg')
@@ -192,7 +192,7 @@ def create_model_graph(layers):
 @app.route("/layers/<int:model_id>", methods=["GET"])
 @cross_origin(expose_headers=allowableHeader)
 def routeLayers(model_id):
-	jmodel = json.loads(mobileNetModel.to_json())
+	jmodel = json.loads(resnetModel.to_json())
 	
 	layers = jmodel["config"]["layers"]
 	
@@ -421,11 +421,11 @@ def convertFiltersToEchartCoord(filters, kDepthNum, kFilterNum, kKernelWidth, kK
 def routeActivations(uri,model_id,layer_name, visual_mode, image_path, kBoxWidth, kBoxHeight, kRowSpace, kColSpace):
 	
 	# Activation있는 레이어의 경우만 결과 리턴
-	if dlvMobile._indata_FeatureMap_Dict['dog.jpg'] != None:
+	if dlvMobile._indata_FeatureMap_Dict[Images[image_path]] != None:
 		if (visual_mode == FILTER_VISUAL_MODE['Image']):
-			return responseActvationsByImg(layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSpace)
+			return responseActvationsByImg(image_path,layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSpace)
 		else:
-			return responseActvationsByEchartCoord(layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSpace)
+			return responseActvationsByEchartCoord(image_path,layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSpace)
 	
 	# Activation이 없을 경우
 	else:
@@ -433,9 +433,9 @@ def routeActivations(uri,model_id,layer_name, visual_mode, image_path, kBoxWidth
 		return ('', 204)  # No Content
 
 
-def responseActvationsByImg(layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSpace):
+def responseActvationsByImg(image_path,layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSpace):
 	targetLayerIdx = dlvMobile._fetchedTensorNameToIdxMap[layer_name]
-	activationResult = dlvMobile._indata_FeatureMap_Dict['dog.jpg']._featureMapList[targetLayerIdx]
+	activationResult = dlvMobile._indata_FeatureMap_Dict[Images[image_path]]._featureMapList[targetLayerIdx]
 	
 	kWidth = len(activationResult)
 	kHeight = len(activationResult[0])
@@ -480,9 +480,9 @@ def responseActvationsByImg(layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSp
 	return res
 
 
-def responseActvationsByEchartCoord(layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSpace):
+def responseActvationsByEchartCoord(image_path,layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSpace):
 	targetLayerIdx = dlvMobile._fetchedTensorNameToIdxMap[layer_name]
-	activationResult = dlvMobile._indata_FeatureMap_Dict['dog.jpg']._featureMapList[targetLayerIdx]
+	activationResult = dlvMobile._indata_FeatureMap_Dict[Images[image_path]]._featureMapList[targetLayerIdx]
 	
 	kWidth = len(activationResult)
 	kHeight = len(activationResult[0])
@@ -627,7 +627,7 @@ if __name__ == '__main__':
 	print(("* Loading Keras model and Flask starting server..."
 	       "please wait until server has fully started"))
 	# app.debug = True
-	app.run(host='0.0.0.0',port=6003)
+	app.run(host='0.0.0.0',port=6000)
 	print("------Server End----------------")
 
 ####################################################################
