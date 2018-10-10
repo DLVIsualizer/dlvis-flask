@@ -26,3 +26,4 @@ modelIdToAddr= {
 	MODELS['BasicConvnet']: kBasicConvNetAddr,
 	MODELS['MobileNet']: kMobileNetAddr
 }
+Images = ['dog1.jpg','dog2.jpg','dog3.jpg','cat1.jpg','cat2.jpg','cat3.jpg']

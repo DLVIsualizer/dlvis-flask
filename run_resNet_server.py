@@ -37,7 +37,7 @@ allowableHeader = [
 
 resnetModel = ResNet50(weights="imagenet")
 dlvMobile = dlv.Model(resnetModel)
-dlvMobile.addInputData('dog.jpg')
+dlvMobile.addInputData('dog1.jpg')
 dlvMobile.addInputData('dog2.jpg')
 dlvMobile.addInputData('dog3.jpg')
 dlvMobile.addInputData('cat1.jpg')
@@ -421,11 +421,11 @@ def convertFiltersToEchartCoord(filters, kDepthNum, kFilterNum, kKernelWidth, kK
 def routeActivations(uri,model_id,layer_name, visual_mode, image_path, kBoxWidth, kBoxHeight, kRowSpace, kColSpace):
 	
 	# Activation있는 레이어의 경우만 결과 리턴
-	if dlvMobile._indata_FeatureMap_Dict['dog.jpg'] != None:
+	if dlvMobile._indata_FeatureMap_Dict[Images[image_path]] != None:
 		if (visual_mode == FILTER_VISUAL_MODE['Image']):
-			return responseActvationsByImg(layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSpace)
+			return responseActvationsByImg(image_path,layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSpace)
 		else:
-			return responseActvationsByEchartCoord(layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSpace)
+			return responseActvationsByEchartCoord(image_path,layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSpace)
 	
 	# Activation이 없을 경우
 	else:
@@ -433,9 +433,9 @@ def routeActivations(uri,model_id,layer_name, visual_mode, image_path, kBoxWidth
 		return ('', 204)  # No Content
 
 
-def responseActvationsByImg(layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSpace):
+def responseActvationsByImg(image_path,layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSpace):
 	targetLayerIdx = dlvMobile._fetchedTensorNameToIdxMap[layer_name]
-	activationResult = dlvMobile._indata_FeatureMap_Dict['dog.jpg']._featureMapList[targetLayerIdx]
+	activationResult = dlvMobile._indata_FeatureMap_Dict[Images[image_path]]._featureMapList[targetLayerIdx]
 	
 	kWidth = len(activationResult)
 	kHeight = len(activationResult[0])
@@ -480,9 +480,9 @@ def responseActvationsByImg(layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSp
 	return res
 
 
-def responseActvationsByEchartCoord(layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSpace):
+def responseActvationsByEchartCoord(image_path,layer_name, kBoxWidth, kBoxHeight, kRowSpace, kColSpace):
 	targetLayerIdx = dlvMobile._fetchedTensorNameToIdxMap[layer_name]
-	activationResult = dlvMobile._indata_FeatureMap_Dict['dog.jpg']._featureMapList[targetLayerIdx]
+	activationResult = dlvMobile._indata_FeatureMap_Dict[Images[image_path]]._featureMapList[targetLayerIdx]
 	
 	kWidth = len(activationResult)
 	kHeight = len(activationResult[0])
